@@ -42,7 +42,7 @@
     "recursive-readdir": "2.1.0",
     "strip-ansi": "3.0.1",
     "style-loader": "0.13.1",
-	"truffle-hdwallet-provider": "0.0.5",
+    "truffle-hdwallet-provider": "0.0.5",
     "truffle-contract": "^1.1.11",
     "url-loader": "0.5.7",
     "webpack": "1.14.0",
@@ -62,7 +62,7 @@
     "redux-auth-wrapper": "^1.0.0",
     "redux-thunk": "^2.2.0",
     "truffle-hdwallet-provider": "0.0.5",
-	"truffle-contract": "^1.1.11",
+    "truffle-contract": "^1.1.11",
     "typeface-roboto": "0.0.54",
     "uport-connect": "^0.7.3"
   },
@@ -70,7 +70,7 @@
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",
-	"geth-local": "scripts/run_geth.sh"
+    "geth-local": "bash scripts/run_geth.sh"
   },
   "jest": {
     "collectCoverageFrom": [

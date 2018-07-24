@@ -20,7 +20,7 @@ class Square extends Component {
 		
 
 		return (
-			<div className = "Square"
+			<div className="Square"
 				style={{
 					color,
 					backgroundColor,

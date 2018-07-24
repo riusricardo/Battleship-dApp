@@ -22,7 +22,7 @@ function getProvider(rpcUrl) {
 
 module.exports = {
   networks: {
-    in_memory: {
+    ganache: {
       get provider() {
         if (!provider) {
           provider = TestRPC.provider({total_accounts: 25})
@@ -43,17 +43,11 @@ module.exports = {
       port: 8544,
       network_id: "234"
     },
-    local: {
+    geth_dev: {
       host: "localhost",
-      port: 8545,
+      port: 9545,
       network_id: "*", // Match any network id
-      gas: 4004580
-    },
-    geth: {
-      host: "localhost",
-      port: 8545,
-      network_id: "*",
-      gas: 6300000,
+      gas: 7500000
     },
     ropsten: {
       get provider() {
