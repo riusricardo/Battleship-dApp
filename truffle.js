@@ -46,7 +46,7 @@ module.exports = {
     geth_dev: {
       host: "localhost",
       port: 9545,
-      network_id: "*", // Match any network id
+      network_id: 1337,
       gas: 7500000
     },
     ropsten: {
