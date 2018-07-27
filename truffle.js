@@ -47,7 +47,7 @@ module.exports = {
       host: "localhost",
       port: 9545,
       network_id: 1337,
-      gas: 7500000
+      gas: 4600000
     },
     ropsten: {
       get provider() {

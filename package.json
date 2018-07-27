@@ -71,7 +71,7 @@
     "build": "node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",
     "geth-dev": "bash scripts/run_geth_dev.sh",
-	"geth-dev-unlock":"geth --exec 'loadScript(\"scripts/createbalances.js\")' attach .devNet/datadir/geth.ipc"
+    "geth-dev-unlock": "geth --exec 'loadScript(\"scripts/createbalances.js\")' attach .devNet/datadir/geth.ipc"
   },
   "jest": {
     "collectCoverageFrom": [
