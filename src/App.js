@@ -17,6 +17,9 @@ class App extends Component {
     const OnlyAuthLinks = VisibleOnlyAuth(() =>
       <span>
         <li className="pure-menu-item">
+          <Link to="/channel" className="pure-menu-link">Whisper Channel</Link>
+        </li>
+        <li className="pure-menu-item">
           <Link to="/drizzle" className="pure-menu-link">Contract Data</Link>
         </li>
         <li className="pure-menu-item">

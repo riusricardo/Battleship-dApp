@@ -13,6 +13,7 @@ import { LoadingContainer } from 'drizzle-react-components'
 import Boardgame from './layouts/boardgame/Boardgame'
 import drizzleTabContainer from './layouts/drizzle/drizzleTabContainer'
 import Profile from './user/layouts/profile/Profile'
+//import WhisperChannel from './layouts/channel/WhisperChannel' <Route path="channel" component={UserIsAuthenticated(WhisperChannel)} />
 
 import store from './store'
 import drizzleOptions from './drizzleOptions'
@@ -27,6 +28,7 @@ ReactDOM.render((
         <Router history={history}>
           <Route path="/" component={App}>
             <IndexRoute component={Home} />
+            
             <Route path="drizzle" component={UserIsAuthenticated(drizzleTabContainer)} />
             <Route path="boardgame" component={UserIsAuthenticated(Boardgame)} />
             <Route path="profile" component={UserIsAuthenticated(Profile)} />
