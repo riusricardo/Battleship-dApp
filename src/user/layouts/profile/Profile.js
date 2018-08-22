@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
-import ImageAvatar from './imageAvatars';
-import ExampleC from '../../../components/Example'
+import ImageAvatar from './imageAvatars'
 
 class Profile extends Component {
   constructor(props, { authData }) {
@@ -19,7 +18,6 @@ class Profile extends Component {
               {this.props.authData.name}
             </p>
             <ImageAvatar src={this.props.authData.avatar.uri}/>
-            <ExampleC />
           </div>
         </div>
       </main>
