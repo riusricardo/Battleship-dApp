@@ -7,7 +7,7 @@ class Home extends Component {
       <main className="container">
         <div className="pure-g">
           <div className="pure-u-1-1">
-            <h1>Sing in to start playing.</h1>
+            <h1>Instructions.</h1>
           </div>
         </div>
       </main>

@@ -23,10 +23,11 @@ pre {
 }
 
 .container {
+  position: center;
   box-sizing: border-box;
-  width: calc(100% - 60px);
-  max-width: 600px;
-  padding: 45px 20px;
+  width: calc(100%);
+  max-width: 80%;
+  padding: 5% 5%;
   margin: 0 auto;
 }
 
@@ -46,7 +47,7 @@ pre {
 
 .navbar {
   position: fixed;
-  padding: 1px;
+  padding: 0px;
   background: #0c1a2b;
   font-family: 'Oswald', 'Arial Narrow', sans-serif;
 }
@@ -77,8 +78,8 @@ pre {
 }
 
 .board {
-  -webkit-transform: perspective(800px) rotateX(45deg) rotateY(-10deg) rotateZ(15deg);/* Safari */
-  transform: perspective(800px) rotateX(45deg) rotateY(-10deg) rotateZ(10deg);
+  -webkit-transform: perspective(400px) rotateX(30deg) rotateY(0deg) rotateZ(0deg);/* Safari */
+  transform: perspective(400px) rotateX(30deg) rotateY(0deg) rotateZ(0deg);
 }
 
 /* LOADING SCREEN */

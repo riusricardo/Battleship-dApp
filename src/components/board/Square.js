@@ -2,23 +2,15 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 
-//const Square = ( props ) => {
 class Square extends Component {
-	state = {
-		sColor:'#000AAA',
-		bColor:'#000AAA'
-	};
 	render() {
-		const { pColor } = this.props;
-		const { paint } = this.props;
-		/*this.setState({sColor : (paint ? '#000BBB' : '#000AAA')});
-		this.setState({bColor : (paint ? '#000AAA' : '#000BBB')});
-*/
-
-		const backgroundColor = paint ? '#000BBB' : '#000AAA'
-		const color = paint ? '#000AAA' : '#000BBB'
+		const bright = this.props.bright;
+		const shot = this.props.shot;
+		let backgroundColor = bright ? '#000BBB' : '#000AAA'
+		let color = bright ? '#000AAA' : '#000BBB'
+		backgroundColor = shot === -1 ? '#CC0000' : backgroundColor
+		backgroundColor = shot === -2 ? '#000555' : backgroundColor
 		
-
 		return (
 			<div className="Square"
 				style={{

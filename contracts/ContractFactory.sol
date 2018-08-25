@@ -48,12 +48,7 @@ contract ContractFactory {
         require(block.timestamp < (creationTime + _time),"The function is locked by time.");
         _;
     }
-
-    function setRegistry(address _gameReg, address _ethReg) external ifOwner lockAfter(3 weeks) ifNotLocked{
-        gameReg = _gameReg;
-        ethReg = _ethReg;
-    }
-
+    
     function concatBytecode(bytes _data) external ifOwner lockAfter(3 weeks) ifNotLocked{
         bytecode = Bytes.concat(bytecode, _data);
         emit BytecodeChanged(owner, "The owner updated the code.");
@@ -73,24 +68,21 @@ contract ContractFactory {
         emit FabricLocked(owner, "The fabric bytecode became not upgradable.");
     }
 
-    function createAndCall(address _emiter, bytes _data) external payable  returns (address) {
+    function createAndCall(address _actor, bytes _data) external payable {
         address deployed = _deployCode(bytecode);
-        require(gameReg.call(bytes4(keccak256("setFactoryContract(address)")), abi.encode(deployed)));
+        require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address)")), abi.encode(deployed,_actor)));
         require(deployed.call(bytes4(keccak256("setEthReg(address)")), abi.encode(ethReg)));
         require(deployed.call(bytes4(keccak256("setGameReg(address)")), abi.encode(gameReg)));
         require(deployed.call.value(msg.value)(_data),"Failed to send data.");
-        emit ContractDeployed(_emiter, deployed);
-        return deployed;
+        emit ContractDeployed(_actor, deployed);
     }
 
-    function createContract(address _emiter) external returns (address){
+    function createContract(address _actor) external {
         address deployed = _deployCode(bytecode);
-        require(gameReg.call(bytes4(keccak256("setFactoryContract(address)")), abi.encode(deployed)));
+        require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address)")), abi.encode(deployed,_actor)));
         require(deployed.call(bytes4(keccak256("setEthReg(address)")), abi.encode(ethReg)));
         require(deployed.call(bytes4(keccak256("setGameReg(address)")), abi.encode(gameReg)));
-        emit ContractDeployed(_emiter, deployed);
-        return deployed;
-        
+        emit ContractDeployed(_actor, deployed);      
     }
 
     function _deployCode(bytes memory _data) internal returns (address deployedAddress) {

@@ -11,9 +11,9 @@ import App from './App'
 import Home from './layouts/home/Home'
 import { LoadingContainer } from 'drizzle-react-components'
 import Boardgame from './layouts/boardgame/Boardgame'
-import drizzleTabContainer from './layouts/drizzle/drizzleTabContainer'
-import Profile from './user/layouts/profile/Profile'
-//import WhisperChannel from './layouts/channel/WhisperChannel' <Route path="channel" component={UserIsAuthenticated(WhisperChannel)} />
+import createContainer from './layouts/create/createContainer'
+import gamesContainer from './layouts/games/gamesContainer'
+import Profile from './layouts/profile/Profile'
 
 import store from './store'
 import drizzleOptions from './drizzleOptions'
@@ -22,21 +22,22 @@ import drizzleOptions from './drizzleOptions'
 const history = syncHistoryWithStore(browserHistory, store)
 
 ReactDOM.render((
-  <Provider store={store}>
-    <DrizzleProvider options={drizzleOptions} store={store}>
+  <DrizzleProvider options={drizzleOptions}>
+    <Provider store={store}>
       <LoadingContainer>
         <Router history={history}>
           <Route path="/" component={App}>
             <IndexRoute component={Home} />
-            
-            <Route path="drizzle" component={UserIsAuthenticated(drizzleTabContainer)} />
+            <Route path="games" component={UserIsAuthenticated(gamesContainer)} />
+            <Route path="create" component={UserIsAuthenticated(createContainer)} />
             <Route path="boardgame" component={UserIsAuthenticated(Boardgame)} />
             <Route path="profile" component={UserIsAuthenticated(Profile)} />
           </Route>
         </Router>
       </LoadingContainer>
-    </DrizzleProvider>
-  </Provider>
+    </Provider>
+  </DrizzleProvider>
+
   ),
   document.getElementById('root')
 );

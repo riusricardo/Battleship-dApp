@@ -20,15 +20,16 @@ contract Battleship is StateMachine {
     address public player1;
     address public player2;
     address public currentPlayer;
-    uint8 public nonce;
     address public winner;
+    uint8 public nonce;
     uint public betAmt;
     uint public timeout;
     uint public timeoutInterval;
-    mapping(address => bytes32) public hiddenBoards;
     mapping(address => int8[100]) public playerGrids;
-    mapping(address => int8) public hitsToPlayer;
+    mapping(address => bytes32) public hiddenBoards;
     mapping(address => address) public playerSigner;
+    mapping(address => int8) public hitsToPlayer;
+
 
     constructor() public payable{
         owner = msg.sender;
@@ -45,15 +46,13 @@ contract Battleship is StateMachine {
 
     }
 
-    event GameInitialized(address player1);
+    event ValidSigner(address player, address signer, bool result);
+    event GameInitialized(address player);
     event JoinedGame(address player, string message);
     event StateChanged(string newState);
     event MoveMade(address currentPlayer, uint8 xy);
-    event WonChallenged(address player);
     event GameEnded(address winner);
     event TimeoutStarted();
-    event LogCurrentState(bytes32 state);
-    event ValidSigner(address player, address signer, bool result);
     event BetClaimed(address player, uint amount);
 
     modifier ifPlayer() {
@@ -81,6 +80,7 @@ contract Battleship is StateMachine {
         allowFunction(STATE3, this.startTimeout.selector);  //"Play"
         allowFunction(STATE4, this.claimBet.selector);      //"GameOver"
 
+        addStartCondition(STATE2, verifyPlayers);           //"Set"
         addStartCondition(STATE3, verifyBoard);             //"Play"
         addStartCondition(STATE4, verifyWinner);            //"GameOver"
         addStartCondition(STATE4, verifyTimeout);           //"GameOver"
@@ -98,56 +98,53 @@ contract Battleship is StateMachine {
     }
 
     /// @dev A different player can join the game if not specified during deployment. Player2 needs to join and send bet amount.
-    function joinGame(address _player2) public payable checkAllowed {
+    function joinGame(address _playerA, address _playerB) public payable checkAllowed {
         require(gameReg != address(0), "Game registry not set.");
+        require(_playerA != owner && _playerB != owner, "The Factory cannot play.");
         require(msg.value >= betAmt,"Invalid bet amount.");
         
+        // The Factory is the owner and cannot register as player.
+        if( _playerA != address(0) && player1 == address(0) && msg.sender == owner){
+            player1 = _playerA;
+            betAmt = msg.value;
+            require(gameReg.call(bytes4(keccak256("setGameOwner()")))); //Set the contract address as game owner.
+            require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player1,msg.value,1)));
+            emit JoinedGame(player1, "Player 1");
+        }
+
+        // Validate if _playerB parameter is set.
+        if( _playerB != address(0) && player2 == address(0) && _playerB != player1){
+            player2 = _playerB;
+        }
+
         hiddenBoards[msg.sender] = bytes32(0);
         playerSigner[msg.sender] = address(0);
         hitsToPlayer[msg.sender] = 0;
-        
-        // Validate if _player2 parameter is set.
-        if(_player2 != address(0) && player2 == address(0) && _player2 != msg.sender){
-            player2 = _player2;
-        }
 
-        // Join as player 1 and place desired bet.
-        if(player1 == address(0)){
-            require(gameReg.call(bytes4(keccak256("setGameOwner()")))); //Set the contract address as game owner.
-            require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256)")), abi.encode(msg.sender,msg.value)));
-            player1 = msg.sender;
-            betAmt = msg.value;
-            emit JoinedGame(player1, "Player 1");
-            
+        // Join as player 2 if not set in parameter, place the correct bet.
+        if(player2 == address(0) && msg.sender != player1 && msg.sender != owner){
+            require(msg.value == betAmt, "Wrong bet amount.");
+            player2 = msg.sender;
+        }
+        // Player 2 was passed as parameter without bet.
+        if(msg.sender == player2){
+            require(msg.value == betAmt, "Wrong bet amount.");
+            currentPlayer = player2;
+            require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
+            emit JoinedGame(msg.sender, "Player 2");   
+        } 
+
+        if( !(msg.sender == owner || msg.sender == player1 || msg.sender == player2)){
+            revert("Invalid Player");
+        } 
+    }
+
+    function verifyPlayers(bytes32) internal returns(bool){
+        if(currentPlayer == player2 && player1 != address(0) && player2 != address(0)){
+            emit StateChanged("Set");
+            return true;
         } else {
-            
-            // Join as player 2 if not set in parameter, place the correct bet.
-            if(player2 == address(0) && msg.sender != player1){
-                require(msg.value == betAmt, "Wrong bet amount.");
-                require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256)")), abi.encode(msg.sender,msg.value)));
-                player2 = msg.sender;
-                currentPlayer = player2; // player 2 starts.
-                emit JoinedGame(player2, "Player 2");
-                
-                goToNextState();
-                emit StateChanged("Set");
-                
-            } else {
-                
-                // Player 2 was passed as parameter without bet.
-                if(msg.sender == player2){
-                    require(msg.value == betAmt, "Wrong bet amount.");
-                    require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256)")), abi.encode(msg.sender,msg.value)));
-                    currentPlayer = msg.sender;
-                    emit JoinedGame(msg.sender, "Player 2");
-                    
-                    goToNextState();
-                    emit StateChanged("Set");
-                    
-                } else {
-                    revert("Invalid Player");
-                }
-            }
+            return false;
         }
     }
 
@@ -166,10 +163,10 @@ contract Battleship is StateMachine {
     }
 
     function verifyBoard(bytes32) internal returns(bool){
-        if(hiddenBoards[player1] != bytes32(0) 
-        && hiddenBoards[player2] != bytes32(0)
-        && playerSigner[player1] != address(0)
-        && playerSigner[player2] != address(0)
+        if( hiddenBoards[player1] != bytes32(0) 
+            && hiddenBoards[player2] != bytes32(0)
+            && playerSigner[player1] != address(0)
+            && playerSigner[player2] != address(0)
         ){
             emit GameInitialized(msg.sender);
             emit StateChanged("Play");
@@ -222,9 +219,9 @@ contract Battleship is StateMachine {
     }
     
     function claimWin() public checkAllowed ifPlayer {
-        int8 requiredToWin = 0;
+        int8 requiredToWin = 20;
         
-        if(hitsToPlayer[opponent(msg.sender)] > hitsToPlayer[msg.sender]){
+        if(hitsToPlayer[opponent(msg.sender)] == requiredToWin){
             winner = msg.sender;
         }
     }
@@ -255,7 +252,7 @@ contract Battleship is StateMachine {
         }
     }
     
-        /// @dev Claim bet if timeout expired.
+    /// @dev Claim bet if timeout expired.
     function claimBet() public checkAllowed ifPlayer {
         require(player2 != address(0), "Game has not started.");
         
@@ -268,7 +265,7 @@ contract Battleship is StateMachine {
             winner.transfer(address(this).balance);
             emit BetClaimed(msg.sender, betAmt * 2);
         } else {
-            revert();
+            revert("You are a loser :( ");
         }
     }
 

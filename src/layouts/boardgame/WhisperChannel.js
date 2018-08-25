@@ -10,7 +10,7 @@ import EthereumDIDRegistry from '../../../build/contracts/EthereumDIDRegistry.js
 
 class WhisperChannel extends Component {
 
-    async init() {
+    
       const useWeb3 = () => getWeb3;
       const results = await useWeb3();
       let accounts = await getAccounts(results.web3Instance);
@@ -45,36 +45,7 @@ class WhisperChannel extends Component {
         await channel.close();
         console.log("Channel closed.")
       }
-    }
-
-render() {
-    return (
-      <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh"
-      }}
-      >
-      <Terminal
-        color='green'
-        backgroundColor='black'
-        barColor='gray'
-        style={{ fontWeight: "bold", fontSize: "1.0em" }}
-        commands={{
-          showmsg: () => 'Two way Ethereum Whisper communication channels',
-          init: this.init()
-        }}
-        descriptions={{
-          showmsg: 'shows a message'
-        }}
-        startState = 'maximised'
-        msg='Two way Ethereum Whisper channels using asymetric key encription. Public keys exchange on the Ethr DID registry.'
-      />
-      </div>
-    )
-  }
+    
 }
 export default WhisperChannel;
 

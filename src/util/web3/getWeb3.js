@@ -1,21 +1,11 @@
-import store from '../../store'
 import Web3 from 'web3'
-
-Web3.providers.HttpProvider.prototype.sendAsync = Web3.providers.HttpProvider.prototype.send
-
-export const WEB3_INITIALIZED = 'WEB3_INITIALIZED'
-function web3Initialized(results) {
-  return {
-    type: WEB3_INITIALIZED,
-    payload: results
-  }
-}
+//import HttpProvider from 'ethjs-provider-http'
 
 let getWeb3 = new Promise(function(resolve, reject) {
   // Wait for loading completion to avoid race conditions with web3 injection timing.
-  window.addEventListener('load', function(dispatch) {
-    var results
-    var web3
+  window.addEventListener('load', function() {
+    let results
+    let web3 = window.web3
 
     // Checking if Web3 has been injected by the browser (Mist/MetaMask)
     if (typeof web3 !== 'undefined') {
@@ -29,12 +19,11 @@ let getWeb3 = new Promise(function(resolve, reject) {
 
       console.log('Injected web3 detected.');
 
-      //resolve(store.dispatch(web3Initialized(results)))
       resolve(results)
     } else {
-
-      // Fallback to localhost if no web3 injection.
-
+      // Fallback to localhost if no web3 injection. We've configured this to
+      // use the development console's port by default.
+      //let provider = new HttpProvider('http://localhost:9545');
       var provider = new Web3.providers.HttpProvider('http://localhost:9545')
 
       web3 = new Web3(provider)
@@ -46,11 +35,8 @@ let getWeb3 = new Promise(function(resolve, reject) {
 
       console.log('No web3 instance injected, using Local web3.');
 
-      //resolve(store.dispatch(web3Initialized(results)))
       resolve(results)
     }
-
-    // TODO: Error checking.
   })
 })
 

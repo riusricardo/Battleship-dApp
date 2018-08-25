@@ -1,9 +1,10 @@
-//import Battleship from './../build/contracts/Battleship.json'
+import Battleship from './../build/contracts/Battleship.json'
 import ContractFactory from './../build/contracts/ContractFactory.json'
 import GameRegistry from './../build/contracts/GameRegistry.json'
 
 
 const drizzleOptions = {
+  syncAlways:{},
   web3: {
     block: false,
     fallback: {
@@ -14,11 +15,11 @@ const drizzleOptions = {
   contracts: [
     ContractFactory,
     GameRegistry
-    //,Battleship
+    ,Battleship
   ],
   events: {
     GameRegistry: ['GameOwnerSet','PlayerSet','WinnerSet','PlayerBoardSet'],
-    ContractFactory: ['ContractDeployed','BytecodeChanged','FabricLocked']
+    ContractFactory: ['ContractDeployed']
     //,Battleship: ['GameInitialized','JoinedGame','StateChanged','MoveMade','WonChallenged','GameEnded','TimeoutStarted','LogCurrentState','ValidSigner','BetClaimed']
   },
   polls: {

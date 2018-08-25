@@ -5,6 +5,7 @@ import { HiddenOnlyAuth, VisibleOnlyAuth } from './util/wrappers.js'
 // UI Components
 import LoginButtonContainer from './user/ui/loginbutton/LoginButtonContainer'
 import LogoutButtonContainer from './user/ui/logoutbutton/LogoutButtonContainer'
+import HeaderAccount from './components/Account'
 
 // Styles
 import './css/oswald.css'
@@ -17,10 +18,13 @@ class App extends Component {
     const OnlyAuthLinks = VisibleOnlyAuth(() =>
       <span>
         <li className="pure-menu-item">
-          <Link to="/channel" className="pure-menu-link">Whisper Channel</Link>
+          <HeaderAccount accountIndex="0" units="ether" precision="3" />
         </li>
         <li className="pure-menu-item">
-          <Link to="/drizzle" className="pure-menu-link">Contract Data</Link>
+          <Link to="/create" className="pure-menu-link">Create Game</Link>
+        </li>
+        <li className="pure-menu-item">
+          <Link to="/games" className="pure-menu-link">Games</Link>
         </li>
         <li className="pure-menu-item">
           <Link to="/boardgame" className="pure-menu-link">Board Game</Link>
@@ -41,7 +45,7 @@ class App extends Component {
     return (
       <div className="App">
         <nav className="navbar pure-menu pure-menu-horizontal">
-          <Link to="/" className="pure-menu-heading pure-menu-link">Battleship</Link>
+          <Link to="/" className="pure-menu-heading pure-menu-link">⚔ Battleship ⚓ </Link>
           <ul className="pure-menu-list navbar-right">
             <OnlyGuestLinks />
             <OnlyAuthLinks />

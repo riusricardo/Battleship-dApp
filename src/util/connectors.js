@@ -1,8 +1,8 @@
 import { Connect, SimpleSigner } from 'uport-connect';
 import Key from './key.json';
 
-const uport = new Connect('blocks4humans', {
-  clientId: '2oupi9Gj934NaPndCSBCiUWr28e1PwbA2vB',
+const uport = new Connect('Battleship-dApp', {
+  clientId: '2om2bQq7KxJWhsYHQ7v8FyQdQyWprqEYrzo',
   network: 'rinkeby',
   signer: SimpleSigner(Key.uPortSigner),
 });

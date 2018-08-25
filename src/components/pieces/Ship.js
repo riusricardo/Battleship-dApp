@@ -10,7 +10,7 @@ const Ship = (props) => {
       color: props.colors,
       fontSize: props.fontsize
     }}> 
-    🛥
+    ⛵
     </span>
   )
 }

@@ -7,15 +7,18 @@ contract GameRegistry {
 
     struct Game{
         address gameContract;
-        address[] gamePlayers;
+        address player1;
+        address player2;
         address gameWinner;
         uint potAmount;
-        mapping(address => uint8[100]) gamePlayerBoard;
+        uint8[100] gamePlayerBoard1;
+        uint8[100] gamePlayerBoard2;
     }
     
     mapping(address => bool) public gameList;
     mapping(address => Game) public games;
     mapping(address => address[]) public playerGames;
+    mapping(address => uint) public changed;
 
     constructor() public {
         owner = msg.sender;
@@ -51,13 +54,20 @@ contract GameRegistry {
     event PlayerSet(address indexed gameAddress, string message);
     event WinnerSet(address indexed gameAddress, string message);
     event PlayerBoardSet(address indexed gameAddress, address player, string message);
+    event CreatedGame(address indexed gameAddress, address indexed player, uint previousChange);
 
     function setFactory(address _factory) external ifOwner{
         factory = _factory;
     }
 
-    function setFactoryContract(address _contract) external ifFactory{
+    function setFactoryGame(address _contract, address _actor) external ifFactory{
         gameList[_contract] = true;
+        setGame(_contract, _actor);
+    }
+
+    function setGame(address _gameAddress, address _actor) internal ifFactory{
+        emit CreatedGame(_gameAddress, _actor, changed[_actor]);
+        changed[_actor] = block.number;
     }
 
     function setGameOwner() external ifFactoryGame{
@@ -65,8 +75,9 @@ contract GameRegistry {
         emit GameOwnerSet(msg.sender, msg.sender, "Game address set.");
     }
 
-    function setPlayer(address _player, uint _amount) external ifGameOwner ifFactoryGame{
-        games[msg.sender].gamePlayers.push(_player);
+    function setPlayer(address _player, uint _amount, uint _num) external ifGameOwner ifFactoryGame{
+        if(_num == 1){games[msg.sender].player1 = _player;}
+        if(_num == 2){games[msg.sender].player2 = _player;}
         games[msg.sender].potAmount = _amount * 2;
         playerGames[_player].push(msg.sender);
         emit PlayerSet(msg.sender, "Player set.");
@@ -77,8 +88,9 @@ contract GameRegistry {
         emit WinnerSet(msg.sender, "Winner set.");
     }
 
-    function setPlayerBoard(address _player, uint8[100] _board) external ifGameOwner ifFactoryGame{
-        games[msg.sender].gamePlayerBoard[_player] = _board;
+    function setPlayerBoard(address _player, uint8[100] _board, uint _num) external ifGameOwner ifFactoryGame{
+        if(_num == 1){games[msg.sender].gamePlayerBoard1 = _board;}
+        if(_num == 2){games[msg.sender].gamePlayerBoard2 = _board;}
         emit PlayerBoardSet(msg.sender, _player, "Player gameboard set.");
     }
 
