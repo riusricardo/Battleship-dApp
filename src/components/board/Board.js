@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import Square from './Square';
 import Ship from '../pieces/Ship';
-import { squaresFetchData } from '../../actions/BoardActions';
 
 
 class Board extends Component {
@@ -15,9 +14,6 @@ class Board extends Component {
 
     let initialState = {};
     this.state = initialState;
-  }
-  componentWillMount() {
-    this.props.fetchData(this.props.player);
   }
 
   handleSquareClick(toX, toY, pos) {
@@ -72,7 +68,6 @@ const mapStateToProps = (state) => {
 };
 const mapDispatchToProps = (dispatch) => {
   return {
-    fetchData: (player) => dispatch(squaresFetchData(player))
   };
 };
 export default connect(mapStateToProps,mapDispatchToProps)(Board);

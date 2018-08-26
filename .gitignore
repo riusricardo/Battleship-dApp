@@ -5,6 +5,7 @@ chaindata/
 *LOCK
 *nodekey
 *transactions.rlp
+*.lock
 
 # Logs
 logs

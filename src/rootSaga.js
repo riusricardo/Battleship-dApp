@@ -4,5 +4,6 @@ import { drizzleSagas } from 'drizzle'
 export default function* root() {
   yield all(
     drizzleSagas.map(saga => fork(saga))
+    
   )
 }

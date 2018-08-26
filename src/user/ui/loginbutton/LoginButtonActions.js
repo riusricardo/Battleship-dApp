@@ -21,14 +21,14 @@ export function loginUser() {
 
       // Used a manual redirect here as opposed to a wrapper.
       // This way, once logged in a user can still access the home page.
-      var currentLocation = browserHistory.getCurrentLocation()
+    /*var currentLocation = browserHistory.getCurrentLocation()
 
       if ('redirect' in currentLocation.query)
       {
         return browserHistory.push(decodeURIComponent(currentLocation.query.redirect))
       }
-
-      return browserHistory.push('/boardgame')
+    */
+      return browserHistory.push('/create')
     })
   }
 }

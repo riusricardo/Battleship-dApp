@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
-import { drizzleConnect } from 'drizzle-react'
-import PropTypes from 'prop-types'
+import { connect } from 'react-redux'
 import Board from '../../components/board/Board';
 import Dialog from '@material-ui/core/Dialog';
 import Button from '@material-ui/core/Button';
@@ -8,18 +7,12 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import {Topic} from '../../whisper/whisper-channel/channel'
-import {createChannel} from '../../whisper/whisper-channel/channel'
-import {sleep} from '../../whisper/whisper-channel/channel'
+import { squaresFetchData } from '../../actions/BoardActions';
 
 class BoardGame extends Component {
   constructor(props, context) {
     super(props)
 
-    this.contracts = context.drizzle.contracts
-
-
-    this.handleClickOpen = this.handleClickOpen.bind(this);
     this.handleClose = this.handleClose.bind(this);
     this.handleChannel = this.handleChannel.bind(this);
 
@@ -28,18 +21,12 @@ class BoardGame extends Component {
     this.state = initialState;
   }
 
-  handleClickOpen = () => {
-    this.setState({ open: true });
-  };
-
   handleClose = () => {
     this.setState({ open: false });
   };
 
   handleChannel = () => {
-
-      console.log("Channel closed.")
-    
+    this.props.fetchData("2");
   };
 
   render() {
@@ -48,19 +35,22 @@ class BoardGame extends Component {
         <div className="pure-g">
           <div className="pure-u-1-1">
             <h1>The Battle Of The 7 Seas.</h1>
+            <h3>Game Address: {this.props.gameAddress}</h3>
             <Button variant="contained" color="primary" onClick={this.handleChannel}>
              Start Channel
             </Button>
           </div>
             <div className="pure-g-r">
               <div className="pure-u-1-3" style={{width: 300,height: 300}}>
-              <h3>My Board</h3>
+              <h3>Player 1 Board</h3>
+              {this.props.player1}
                   <Board player="2"/>
               </div>
               <div className="pure-u-1-3" style={{width: 200}}>
               </div>
               <div className="pure-u-1-3" style={{width: 300,height: 300}}>
-              <h3>Guessing Board</h3>
+              <h3>Player 2 Board</h3>
+              {this.props.player2}
                   <Board player="1"/>
               </div>
             </div>
@@ -90,20 +80,20 @@ class BoardGame extends Component {
   }
 }
 
-BoardGame.contextTypes = {
-  drizzle: PropTypes.object
-}
-
 const mapStateToProps = state => {
   return {
     contracts: state.contracts,
-    accounts: state.accounts
+    accounts: state.accounts,
+    player1: state.player1,
+    player2: state.player2,
+    gameAddress: state.gameAddress,
   }
 }
 const mapDispatchToProps = (dispatch) => {
   return {
-    
+    fetchData: (player) => dispatch(squaresFetchData(player)),
   };
 };
 
-export default drizzleConnect(BoardGame,mapStateToProps,mapDispatchToProps);
+export default connect(mapStateToProps,mapDispatchToProps)(BoardGame);
+
