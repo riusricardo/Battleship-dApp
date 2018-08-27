@@ -15,6 +15,7 @@ contract Battleship is StateMachine {
     bytes32[] states = [STATE1, STATE2, STATE3, STATE4];
 
     address public owner;
+    string public topic; // Whisper-channel topic
     address internal ethrReg;// Ethr DID registry
     address internal gameReg;// Game registry
     address public player1;
@@ -98,7 +99,7 @@ contract Battleship is StateMachine {
     }
 
     /// @dev A different player can join the game if not specified during deployment. Player2 needs to join and send bet amount.
-    function joinGame(address _playerA, address _playerB) public payable checkAllowed {
+    function joinGame(address _playerA, address _playerB, string _topic) public payable checkAllowed {
         require(gameReg != address(0), "Game registry not set.");
         require(_playerA != owner && _playerB != owner, "The Factory cannot play.");
         require(msg.value >= betAmt,"Invalid bet amount.");
@@ -106,6 +107,7 @@ contract Battleship is StateMachine {
         // The Factory is the owner and cannot register as player.
         if( _playerA != address(0) && player1 == address(0) && msg.sender == owner){
             player1 = _playerA;
+            topic = _topic;
             betAmt = msg.value;
             require(gameReg.call(bytes4(keccak256("setGameOwner()")))); //Set the contract address as game owner.
             require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player1,msg.value,1)));

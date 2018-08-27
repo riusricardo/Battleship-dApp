@@ -10,7 +10,8 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { squaresFetchData } from '../../actions/BoardActions';
 import { channelCreating } from '../../actions/whisper/channelCreate';
-import {Topic} from '../../whisper/whisper-channel/channel'
+import SuccessSnackbar from '../../components/SuccessSnackbar';
+import WarningSnackbar from '../../components/WarningSnackbar';
 
 class BoardGame extends Component {
   constructor(props, context) {
@@ -20,10 +21,11 @@ class BoardGame extends Component {
     this.handleStart = this.handleStart.bind(this);
 
     this.contracts = context.drizzle.contracts;
+    this.web3 = context.drizzle.web3;
 
     let initialState = {};
     
-    if(!this.props.gameAddress){
+    if(!this.props.gameAddress && this.props.existsP2){
       initialState.open = true;
     }else{
       initialState.open = false;
@@ -39,24 +41,33 @@ class BoardGame extends Component {
   handleStart = () => {
 
     this.props.fetchData(1);
-    let topic = Topic();
-    console.log(topic)
-    this.props.createChannel(this.contracts["EthereumDIDRegistry"].address, this.props.player1, this.props.player2, topic)
+    this.props.fetchData(2);
+    
+    this.props.createChannel(this.contracts["EthereumDIDRegistry"].address, this.props.player1, this.props.player2, this.props.topic)
     //this.props.gameContract.methods.getPlayerBoard(this.props.player1).call().then(console.log)
-    //this.props.gameContract.methods.getPlayerBoard(this.props.player2).call().then(console.log)
 
   };
 
   render() {
+
+    let disable = false;
+    if((this.props.existsP2 === 'undefined' || !this.props.existsP2)) {
+      disable =  (!(this.web3.utils.isAddress(this.props.gameAddress)) || this.props.waitP2)
+    }else {
+      disable = true;
+    }
+
     return(
       <main className="container">
         <div className="pure-g">
           <div className="pure-u-1-1">
             <h1>The Battle Of The 7 Seas.</h1>
             <h3>Game Address: {this.props.gameAddress}</h3>
-            <Button variant="contained" color="primary" onClick={this.handleStart}>
+            <Button variant="contained" color="primary" onClick={this.handleStart} disabled={disable}>
              Start
             </Button>
+            <WarningSnackbar message="Waiting Player 2 To Join The Game." open={disable && this.props.waitP2}/>
+            <SuccessSnackbar message="Player 2 Joined The Game" open={this.props.existsP2}/>
           </div>
             <div className="pure-g">
               <div className="pure-u-1-3" style={{width: 300,height: 300}}>
@@ -104,13 +115,15 @@ BoardGame.contextTypes = {
 }
 const mapStateToProps = state => {
   return {
-    EthereumDIDRegistry: state.contracts.EthereumDIDRegistry,
-    contracts: state.contracts,
-    accounts: state.accounts,
     player1: state.player1,
     player2: state.player2,
     gameAddress: state.gameAddress,
-    gameContract: state.gameContract
+    gameContract: state.gameContract,
+    topic: state.topic,
+    errorP2: state.errorP2,
+    waitP2: state.waitP2,
+    existsP2: state.existsP2,
+
   }
 }
 const mapDispatchToProps = (dispatch) => {

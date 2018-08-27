@@ -9,3 +9,14 @@ export function gameContract(state = {}, action) {
             return state;
     }
 }
+
+
+export function topic(state = '', action) {
+    switch (action.type) {
+        case 'ADD_GAME_TOPIC':
+            return action.topic;
+
+        default:
+            return state;
+    }
+}

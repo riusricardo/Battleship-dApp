@@ -7,6 +7,7 @@ import SendIcon from "@material-ui/icons/Send";
 import ethjsABI from 'ethjs-abi'
 import {updatingPlayer1, updatingPlayer2} from '../../../actions/create/updatePlayers'
 import {updatingGameAddress} from '../../../actions/create/updateGameAddress'
+import {Topic} from '../../../whisper/whisper-channel/channel'
 
 /*
  * Create component.
@@ -24,15 +25,22 @@ class ContractFormCreate extends Component {
     this.web3 = context.drizzle.web3;
 
     // Get the contract ABI for Battleship
-    this.BattleshipABI = this.contracts[this.props.factory].abi
+    this.BattleshipABI = this.contracts[this.props.factoryContract].abi
     this.BattleshipContract =  new this.web3.eth.Contract(this.BattleshipABI);
 
     // Get the factory contract address
     this.address = this.contracts[this.props.contract].address;
 
     for (let i = 0; i < this.BattleshipABI.length; i++) {
-      if (this.BattleshipABI[i].name === this.props.join) {
-          this.joinPos = i;
+      if (this.BattleshipABI[i].name === this.props.joinMethod) {
+          this.joinGamePos = i;
+          break;
+      }
+    }
+
+    for (let i = 0; i < this.BattleshipABI.length; i++) {
+      if (this.BattleshipABI[i].name === "setTopic") {
+          this.setTopicPos = i;
           break;
       }
     }
@@ -44,12 +52,15 @@ class ContractFormCreate extends Component {
 
   handleSubmit() {
     const self = this;
+    const topic = Topic();
     
     self.props.updateP1(self.props.accounts[self.props.accountIndex]);
     self.props.updateP2(self.state.actor2); 
+    self.props.addGameTopic(topic);
+
 
     let actor2 = self.web3.utils.isAddress(self.state.actor2) ? self.state.actor2 : '0x0000000000000000000000000000000000000000';
-    const joinBattle = ethjsABI.encodeMethod(self.BattleshipABI[self.joinPos], [self.props.accounts[self.props.accountIndex], actor2 ]);
+    const joinBattle = ethjsABI.encodeMethod(self.BattleshipABI[self.joinGamePos], [self.props.accounts[self.props.accountIndex], actor2, topic ]);
 
     self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], joinBattle).estimateGas({from: self.props.accounts[self.props.accountIndex]})
     .then(function(gasAmount){
@@ -120,7 +131,8 @@ const mapDispatchToProps = (dispatch) => {
     updateP1 : (player) => {dispatch(updatingPlayer1(player))},
     updateP2 : (player) => {dispatch(updatingPlayer2(player))},
     updateGameAddress : (game) => {dispatch(updatingGameAddress(game))},
-    addGameContract: (gameContract) => dispatch({type: 'ADD_GAME_CONTRACT', gameContract})
+    addGameContract: (gameContract) => dispatch({type: 'ADD_GAME_CONTRACT', gameContract}),
+    addGameTopic: (topic) => dispatch({type: 'ADD_GAME_TOPIC', topic})
 
   };
 };

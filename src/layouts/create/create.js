@@ -17,8 +17,8 @@ class create extends Component {
             <ContractFormCreate 
             contract="ContractFactory"  
             method="createAndCall" 
-            factory="Battleship" 
-            join="joinGame" 
+            factoryContract="Battleship" 
+            joinMethod="joinGame" 
             accountIndex="0"
             />
 

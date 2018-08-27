@@ -10,6 +10,8 @@ import register from 'ethr-did-resolver'
 import {stringToBytes32, bytes32toString} from 'ethr-did-resolver'
 import interval from 'interval-promise'
 import resolver from 'did-resolver'
+import store from '../../store'
+import {joinChannelSucceded,joinChannelIsWaiting,joinChannelErrored} from '../../actions/whisper/joinedChannel'
 
 
 class Channel {
@@ -66,6 +68,8 @@ class Channel {
                     res = await self.getIdPubKey(self.identity,topic);
                     i++;
                     if(i >= 300){
+                        store.dispatch(joinChannelErrored(true));
+                        store.dispatch(joinChannelIsWaiting(false));
                         reject("Waited 5 mins to set public key.");
                         break;
                     }
@@ -95,6 +99,8 @@ class Channel {
                     doc = await resolver(self.did);
                     i++;
                     if(i >= 300){
+                        store.dispatch(joinChannelErrored(true));
+                        store.dispatch(joinChannelIsWaiting(false));
                         reject("Waited 5 mins to set signer.");
                         break;
                     }
@@ -123,6 +129,8 @@ class Channel {
                     doc = await resolver(self.did2);
                     i++;
                     if(i >= 300){
+                        store.dispatch(joinChannelErrored(true));
+                        store.dispatch(joinChannelIsWaiting(false));;
                         reject("Waited 5 mins to get signer.");
                         break;
                     }
@@ -153,7 +161,7 @@ class Channel {
                         console.log("Waiting the other peer...");
                         longStr = false;
                     }else{
-                        console.log("...");
+                        //console.log("...");
                     }
                 }else {
                     self.signer2  = await getSigner(delegate2.delegateNum);
@@ -161,9 +169,14 @@ class Channel {
                 await sleep(1);
                 i++;
                 if(i >= 600){
+                    store.dispatch(joinChannelErrored(true));
+                    store.dispatch(joinChannelIsWaiting(false));
+                    store.dispatch(joinChannelSucceded(false));
                     throw new Error("error: waited 10 mins. ")
                 }
             }
+            store.dispatch(joinChannelIsWaiting(false));
+            store.dispatch(joinChannelSucceded(true));
             return {whisperId: whispInit.id, signer: signer.kp } 
         } catch (err) {
             console.log("Set channel error: ",err);
@@ -334,7 +347,10 @@ new Promise(async (resolve, reject) => {
         }
         i++;
 
+        store.dispatch(joinChannelIsWaiting(true));
         if(i >= 120){
+            store.dispatch(joinChannelIsWaiting(false));
+            store.dispatch(joinChannelErrored(true));
             reject("Cannot create channel.");
             break;
         }
