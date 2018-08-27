@@ -15,8 +15,8 @@ contract Battleship is StateMachine {
     bytes32[] states = [STATE1, STATE2, STATE3, STATE4];
 
     address public owner;
-    address public ethrReg;// Ethr DID registry
-    address public gameReg;// Game registry
+    address internal ethrReg;// Ethr DID registry
+    address internal gameReg;// Game registry
     address public player1;
     address public player2;
     address public currentPlayer;
@@ -24,11 +24,11 @@ contract Battleship is StateMachine {
     uint8 public nonce;
     uint public betAmt;
     uint public timeout;
-    uint public timeoutInterval;
-    mapping(address => int8[100]) public playerGrids;
-    mapping(address => bytes32) public hiddenBoards;
+    uint internal timeoutInterval;
+    mapping(address => int8[]) internal playerBoard;
+    mapping(address => bytes32) internal hiddenBoards;
+    mapping(address => int8) internal hitsToPlayer;
     mapping(address => address) public playerSigner;
-    mapping(address => int8) public hitsToPlayer;
 
 
     constructor() public payable{
@@ -109,12 +109,13 @@ contract Battleship is StateMachine {
             betAmt = msg.value;
             require(gameReg.call(bytes4(keccak256("setGameOwner()")))); //Set the contract address as game owner.
             require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player1,msg.value,1)));
-            emit JoinedGame(player1, "Player 1");
+            emit JoinedGame(player1, "Player1");
         }
 
         // Validate if _playerB parameter is set.
         if( _playerB != address(0) && player2 == address(0) && _playerB != player1){
             player2 = _playerB;
+            require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
         }
 
         hiddenBoards[msg.sender] = bytes32(0);
@@ -131,7 +132,7 @@ contract Battleship is StateMachine {
             require(msg.value == betAmt, "Wrong bet amount.");
             currentPlayer = player2;
             require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
-            emit JoinedGame(msg.sender, "Player 2");   
+            emit JoinedGame(msg.sender, "Player2");   
         } 
 
         if( !(msg.sender == owner || msg.sender == player1 || msg.sender == player2)){
@@ -157,7 +158,8 @@ contract Battleship is StateMachine {
         
         //Get signer delegate
         address signer = UtilsLib.recoverSigner(_boardHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
-        isValidDelegate(msg.sender, UtilsLib.stringToBytes32("Secp256k1VerificationKey2018"), signer);
+        //isValidDelegate(msg.sender, UtilsLib.stringToBytes32('Secp256k1VerificationKey2018'), signer);
+        isValidDelegate(msg.sender, hex"766572694b657900000000000000000000000000000000000000000000000000", signer);
         
         hiddenBoards[msg.sender] = _boardHash;
     }
@@ -180,7 +182,7 @@ contract Battleship is StateMachine {
     /// @param _xy Coordinates in the X and Y planes.
     function move(uint8 _xy, uint8 _nonce) public checkAllowed ifPlayer {
         require(_xy >= 0 && _xy <= 99,"Out of range.");
-        require(playerGrids[opponent(msg.sender)][_xy] >= 0, "Cannot shoot here.");
+        require(playerBoard[opponent(msg.sender)][_xy] >= 0, "Cannot shoot here.");
         require(nonce >= 0 && nonce <= 200, "Incorrect sequence number.");
         require(_nonce == nonce && _nonce >= 0, "Incorrect sequence number.");
         
@@ -223,6 +225,8 @@ contract Battleship is StateMachine {
         
         if(hitsToPlayer[opponent(msg.sender)] == requiredToWin){
             winner = msg.sender;
+            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
+            
         }
     }
     
@@ -238,7 +242,7 @@ contract Battleship is StateMachine {
 
     /// @dev Start timeout in case of game halt.
     function startTimeout() public  checkAllowed ifPlayer {
-        require(currentPlayer == opponent(msg.sender),"Cannot start a timeout on yourself.");
+        require(currentPlayer == opponent(msg.sender),"Cannot start timeout.");
         timeout = block.timestamp + timeoutInterval;
         emit TimeoutStarted();
     }
@@ -258,6 +262,7 @@ contract Battleship is StateMachine {
         
         if(block.timestamp >= timeout && msg.sender == opponent(currentPlayer)){
             winner = opponent(currentPlayer);
+            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
         }
         
         if(msg.sender == winner)
@@ -267,6 +272,14 @@ contract Battleship is StateMachine {
         } else {
             revert("You are a loser :( ");
         }
+    }
+
+    /// @dev Get the final revealed board.
+    /// @param _player The address of the selected player..
+    /// @return Board array.
+    function getPlayerBoard(address _player) external returns(int8[]){
+        int8[] storage board = playerBoard[_player];
+        return board;
     }
 
     /// @dev Get the opponent player.
@@ -290,7 +303,7 @@ contract Battleship is StateMachine {
     /// @param _delegate The address of the signer delegate.
     function isValidDelegate(address _identity, bytes32 _delegateType, address _delegate) internal ifPlayer{
         require(ethrReg != address(0), "Ethr registry not set.");
-        require(_identity != address(0) &&  _delegateType != bytes32(0) && _delegate != address(0),"Invalid input.");
+        require(_identity != address(0) && _delegateType != bytes32(0) && _delegate != address(0),"Invalid input.");
         bool result;
         bytes4 sig = bytes4(keccak256("validDelegate(address,bytes32,address)"));
         assembly {
@@ -307,7 +320,7 @@ contract Battleship is StateMachine {
               sload(ethrReg_slot), // Append _slot to access Ethr DID registry storage.
               0, // No ether tansfer.
               ptr, // Inputs are stored at location ptr.
-              0x64, // Inputs are 100 bytes long.
+              0x64, // Sum of all inputs is 100 bytes long.
               ptr,  //Store output over input.
               0x20) //Outputs are 32 bytes long.
             if eq(success, 0) {

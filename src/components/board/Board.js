@@ -21,30 +21,69 @@ class Board extends Component {
     console.log("Position:"+pos, "X:"+toX, "Y:"+toY);
   }
 
+  mouseOut() {
+    this.setState({mouseOver: false});
+  }
+  
+  mouseOver() {
+    this.setState({mouseOver: true});
+  }
+
   renderSquare(pos,hasShip,shot) {
     const x = pos % 10;
     const y = Math.floor(pos / 10);
     const bright = (x + y) % 2 === 1;
-    const piece = hasShip ? <Ship colors={'#FFFFFF'} fontsize={23}/> : null;
+    const piece = hasShip ? <Ship colors={'#FFFFFF'} fontsize={24}/> : null;
 
-    return (
-      <div key={pos} style={{ width: '10%', height: '10%' }}
-      onClick={() => this.handleSquareClick(x, y, pos)}>
-        <Square bright={bright} shot={shot}> {piece} </Square>
-      </div>
-    );
+    if(this.props.num === "1"){
+      return (
+        <div onMouseOut={() => this.mouseOut()} onMouseOver={() => this.mouseOver()}
+        key={pos} 
+        style={{ width: '10%', height: '10%' ,opacity: 0.85}}
+        >
+          <Square bright={bright} shot={shot}> {piece} </Square>
+        </div>
+      );
+    }
+
+    if(this.props.num === "2"){
+      return (
+        <div onMouseOut={() => this.mouseOut()} onMouseOver={() => this.mouseOver()}
+        key={pos} 
+        style={{ width: '10%', height: '10%'}}
+        onClick={() => this.handleSquareClick(x, y, pos)}
+        >
+          <Square bright={bright} shot={shot}> {piece} </Square>
+        </div>
+      );
+    }
+
+
   }
 
   render() {
 
     let hasShip, shot, pos = 0;
     let squares = [];
-    this.props.squares.forEach(element => {
-      hasShip = (element === 1 || element === -1);
-      shot = (element === -1 || element === -2) ? element : 0;
-      squares.push(this.renderSquare(pos,hasShip,shot));
-      pos++;
-    });
+    
+    //hit: 3 miss:2 ship:1
+    if(this.props.num === "1"){
+      this.props.squares1.forEach(element => {
+        hasShip = (element === 1 || element === 3); //ship or hit
+        shot = (element === 3 || element === 2) ? element : 0; //hit, miss and nothing
+        squares.push(this.renderSquare(pos,hasShip,shot));
+        pos++;
+      });
+    }
+
+    if(this.props.num === "2"){
+      this.props.squares2.forEach(element => {
+        hasShip = (element === 1 || element === 3);//ship or hit
+        shot = (element === 3 || element === 2) ? element : 0;//hit, miss and nothing
+        squares.push(this.renderSquare(pos,hasShip,shot));
+        pos++;
+      });
+    }
 
     return (
       <div className="board" style={{
@@ -61,7 +100,8 @@ class Board extends Component {
 
 const mapStateToProps = (state) => {
   return {
-      squares: state.squares,
+      squares1: state.squares1,
+      squares2: state.squares2,
       hasErrored: state.squaresHasErrored,
       isLoading: state.squaresIsLoading
   };

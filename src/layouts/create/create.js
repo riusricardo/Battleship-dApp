@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import AccountData from '../../components/contracts/AccountData'
-import ContractData from '../../components/contracts/ContractData'
-import ContractForm from '../../components/contracts/ContractForm'
+import { drizzleConnect } from 'drizzle-react'
+import PropTypes from 'prop-types'
+//import ContractForm from '../../components/contracts/ContractForm'
 
 import ContractFormCreate from '../../components/contracts/ContractFactory/ContractFormCreate'
 
@@ -31,4 +31,21 @@ class create extends Component {
   }
 }
 
-export default create
+create.contextTypes = {
+  drizzle: PropTypes.object
+}
+const mapStateToProps = state => {
+  return {
+    contracts: state.contracts,
+    accounts: state.accounts,
+    player1: state.player1,
+    player2: state.player2,
+    gameAddress: state.gameAddress
+  }
+}
+const mapDispatchToProps = (dispatch) => {
+  return {
+  };
+};
+
+export default drizzleConnect(create, mapStateToProps, mapDispatchToProps);

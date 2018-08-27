@@ -21,10 +21,13 @@ class App extends Component {
           <HeaderAccount accountIndex="0" units="ether" precision="3" />
         </li>
         <li className="pure-menu-item">
+          <Link to="/games" className="pure-menu-link">Games</Link>
+        </li>
+        <li className="pure-menu-item">
           <Link to="/create" className="pure-menu-link">Create Game</Link>
         </li>
         <li className="pure-menu-item">
-          <Link to="/games" className="pure-menu-link">Games</Link>
+          <Link to="/gameStats" className="pure-menu-link">Game Data</Link>
         </li>
         <li className="pure-menu-item">
           <Link to="/boardgame" className="pure-menu-link">Board Game</Link>

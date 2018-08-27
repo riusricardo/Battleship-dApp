@@ -1,6 +1,9 @@
 import React, { Component } from 'react'
+import { drizzleConnect } from 'drizzle-react'
+import PropTypes from 'prop-types'
 import ImageAvatar from './imageAvatars'
-import { AccountData } from 'drizzle-react-components'
+import AccountData from '../../components/contracts/AccountData'
+import ContractData from '../../components/contracts/ContractData'
 
 class Profile extends Component {
   constructor(props, { authData }) {
@@ -27,6 +30,8 @@ class Profile extends Component {
                 <h2>Active Account</h2>
                 <AccountData accountIndex="0" units="ether" precision="3" /><br/><br/>
               </div>
+              <h3>Player Games: </h3>
+              <ContractData contract="GameRegistry" method="getPlayerGames" methodArgs={[this.props.accounts[0]]} hideIndicator/>
             </div>
           </div>
         </div>
@@ -35,4 +40,15 @@ class Profile extends Component {
   }
 }
 
-export default Profile
+Profile.contextTypes = {
+  drizzle: PropTypes.object
+}
+
+const mapStateToProps = state => {
+  return {
+    contracts: state.contracts,
+    accounts: state.accounts
+  }
+}
+
+export default drizzleConnect(Profile, mapStateToProps);

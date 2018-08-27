@@ -7,6 +7,7 @@ import RegistryContractABI from 'ethr-did-resolver/contracts/ethr-did-registry.j
 import EthrDID from 'ethr-did'
 import {verifyJWT} from 'did-jwt'
 import register from 'ethr-did-resolver'
+import {stringToBytes32, bytes32toString} from 'ethr-did-resolver'
 import interval from 'interval-promise'
 import resolver from 'did-resolver'
 
@@ -51,28 +52,35 @@ class Channel {
         }).catch(console.log);
     }
 
-    // TODO: add timeouts
+
     async open(){
         const self = this;
 
         const setPublicKey = (topic, pubKey, delegateNum) =>
             new Promise(async (resolve, reject) => {
-                let tx = await self.ethrDid.setAttribute('ChPubKey#' + topic + delegateNum, pubKey).catch(console.log)
+                let tx = await self.ethrDid.setAttribute('chPubKey#' + topic + delegateNum, pubKey).catch(console.log)
                 let res = {pubKey:"0x"}
-                while(res.pubKey !== pubKey ){ //add timeout
+                let i = 0;
+                while(res.pubKey !== pubKey ){
                     await sleep(1);
                     res = await self.getIdPubKey(self.identity,topic);
+                    i++;
+                    if(i >= 300){
+                        reject("Waited 5 mins to set public key.");
+                        break;
+                    }
                 }
                 resolve(tx)
             })
  
         const setSigner = () =>
             new Promise(async (resolve, reject) => {
-                let kp = await self.ethrDid.createSigningDelegate().catch(console.log)
+                let {kp} = await self.ethrDid.createSigningDelegate().catch(console.log)
                 let doc = {publicKey:[]};
                 let valid = false; 
                 let delNum;
-                while(!valid){  //add timeout
+                let i = 0;
+                while(!valid){
                     doc.publicKey.forEach(element => {
                         if(element.ethereumAddress === kp.address){
                             valid = true;
@@ -85,6 +93,11 @@ class Channel {
                     });
                     await sleep(1);
                     doc = await resolver(self.did);
+                    i++;
+                    if(i >= 300){
+                        reject("Waited 5 mins to set signer.");
+                        break;
+                    }
                 }
                 resolve({kp,delNum})
             })
@@ -94,7 +107,8 @@ class Channel {
                 let doc = {publicKey:[]};
                 let valid = false; 
                 let signer = null;
-                while(!valid){  //add timeout
+                let i = 0;
+                while(!valid){
                     doc.publicKey.forEach(element => {
                         let dPos = element.id.indexOf("-") 
                         let delNumIn = element.id.substring(dPos, element.id.length)
@@ -107,6 +121,11 @@ class Channel {
                     });
                     await sleep(1);
                     doc = await resolver(self.did2);
+                    i++;
+                    if(i >= 300){
+                        reject("Waited 5 mins to get signer.");
+                        break;
+                    }
                 }
                 resolve(signer)
             })
@@ -125,7 +144,8 @@ class Channel {
             self.pubKey = whispInit.id.pubKey;
 
             let longStr = true;
-            while(!self.signer2){ //add timeout
+            let i = 0;
+            while(!self.signer2){
                 let delegate2 = await self.getIdPubKey(self.identity2, self.topic);
                 self.pubKey2 = delegate2.pubKey;
                 if(!delegate2.pubKey){
@@ -139,10 +159,15 @@ class Channel {
                     self.signer2  = await getSigner(delegate2.delegateNum);
                 }
                 await sleep(1);
+                i++;
+                if(i >= 600){
+                    throw new Error("error: waited 10 mins. ")
+                }
             }
             return {whisperId: whispInit.id, signer: signer.kp } 
         } catch (err) {
             console.log("Set channel error: ",err);
+            throw new Error("error: unable to connect with other peer. ")
         }
 
     }
@@ -153,16 +178,25 @@ class Channel {
             let pubKey, delegateNum;
             const history = await changeLog(identity,this.eth,this.registryAddress,this.registry).catch(console.log); 
             history.forEach(event => {
-                if(event._eventName === 'DIDAttributeChanged' && (event.name.match(/ChPubKey/g) || []).length === 1){
-                    let chPos = event.name.search("ChPubKey")
-                    let tPos = event.name.indexOf("#")
-                    let dPos = event.name.indexOf("-")
-                    if( chPos === 0 &&  tPos === 8){
-                        if(event.name.substring(tPos + 1, event.name.length - (event.name.length-dPos)) === topic){
-                            pubKey = event.value;
-                            delegateNum =  event.name.substring(dPos, event.name.length);
-                        }else{}
-                    }else{}
+                if(!event.name){
+                    /*console.log(event._eventName,event.name)
+                    if (event._eventName === 'DIDDelegateChanged') {
+                        console.log(bytes32toString(event.delegateType),event.delegateType)
+                    }
+                    */
+                } else{
+                    let strAttribute = bytes32toString(event.name);
+                    if(event._eventName === 'DIDAttributeChanged' && (strAttribute.match(/chPubKey/g) || []).length === 1){
+                        let chPos = strAttribute.search("chPubKey")
+                        let tPos = strAttribute.indexOf("#")
+                        let dPos = strAttribute.indexOf("-")
+                        if( chPos === 0 &&  tPos === 8){
+                            if(strAttribute.substring(tPos + 1, strAttribute.length - (strAttribute.length-dPos)) === topic){
+                                pubKey = event.value;
+                                delegateNum =  strAttribute.substring(dPos, strAttribute.length);
+                            }
+                        }
+                    }
                 }
             });
             return {pubKey,delegateNum};
@@ -259,10 +293,10 @@ class Channel {
 
         await sleep(3); //Race condition, TODO: promisify
         console.log("Revoke Whisper asymmetric public key.")
-        const id = await self.getIdPubKey(self.identity,self.topic);
+        const id = await self.getIdPubKey(self.identity, self.topic);
         const owner = await self.ethrDid.lookupOwner();
-        const name = "ChPubKey#" + self.topic + id.delegateNum;
-        self.registry.revokeAttribute(self.identity, name , id.pubKey,{from: owner});
+        const name = "chPubKey#" + self.topic + id.delegateNum;
+        self.registry.revokeAttribute(self.identity, stringToBytes32(name) , id.pubKey, {from: owner});
         
         self.identity = null; 
         self.identity2 =  null;
@@ -284,19 +318,25 @@ class Channel {
 export default Channel;
 
 
-// TODO: validate to break cycle
 export const createChannel = (conf) =>
 new Promise(async (resolve, reject) => {
     let longStr = true;
     let channel = new Channel(conf);
+    let i = 0;
     while(channel.registry === null || channel.whisper === null || channel.ethrDid === null )
     {                      
         if(longStr){
             console.log("Creating channel...");
-            await sleep(0.1); 
+            await sleep(2); 
             longStr = false;
         }else {
             console.log("...");
+        }
+        i++;
+
+        if(i >= 120){
+            reject("Cannot create channel.");
+            break;
         }
     }
     resolve(channel)

@@ -1,5 +1,8 @@
 import Web3 from 'web3'
-//import HttpProvider from 'ethjs-provider-http'
+import HttpProvider from 'ethjs-provider-http'
+
+const providerFallback = new HttpProvider('http://localhost:8545');
+const web3Fallback = new Web3(providerFallback);
 
 let getWeb3 = new Promise(function(resolve, reject) {
   // Wait for loading completion to avoid race conditions with web3 injection timing.
@@ -14,7 +17,9 @@ let getWeb3 = new Promise(function(resolve, reject) {
 
       results = {
         web3Instance: web3,
-        web3Provider: web3.currentProvider
+        web3Provider: web3.currentProvider,
+        web3Fallback,
+        providerFallback,
       }
 
       console.log('Injected web3 detected.');
@@ -23,14 +28,16 @@ let getWeb3 = new Promise(function(resolve, reject) {
     } else {
       // Fallback to localhost if no web3 injection. We've configured this to
       // use the development console's port by default.
-      //let provider = new HttpProvider('http://localhost:9545');
-      var provider = new Web3.providers.HttpProvider('http://localhost:9545')
+      let provider = new HttpProvider('http://localhost:8545');
+      //var provider = new Web3.providers.HttpProvider('http://localhost:8545')
 
       web3 = new Web3(provider)
 
       results = {
         web3Instance: web3,
-        web3Provider: provider
+        web3Provider: provider,
+        web3Fallback,
+        providerFallback,
       }
 
       console.log('No web3 instance injected, using Local web3.');

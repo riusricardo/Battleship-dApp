@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
-import { connect } from 'react-redux'
+import { drizzleConnect } from 'drizzle-react'
+import PropTypes from 'prop-types'
 import Board from '../../components/board/Board';
 import Dialog from '@material-ui/core/Dialog';
 import Button from '@material-ui/core/Button';
@@ -8,16 +9,26 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { squaresFetchData } from '../../actions/BoardActions';
+import { channelCreating } from '../../actions/whisper/channelCreate';
+import {Topic} from '../../whisper/whisper-channel/channel'
 
 class BoardGame extends Component {
   constructor(props, context) {
     super(props)
 
     this.handleClose = this.handleClose.bind(this);
-    this.handleChannel = this.handleChannel.bind(this);
+    this.handleStart = this.handleStart.bind(this);
+
+    this.contracts = context.drizzle.contracts;
 
     let initialState = {};
-    initialState.open = false;
+    
+    if(!this.props.gameAddress){
+      initialState.open = true;
+    }else{
+      initialState.open = false;
+    }
+    
     this.state = initialState;
   }
 
@@ -25,8 +36,15 @@ class BoardGame extends Component {
     this.setState({ open: false });
   };
 
-  handleChannel = () => {
-    this.props.fetchData("2");
+  handleStart = () => {
+
+    this.props.fetchData(1);
+    let topic = Topic();
+    console.log(topic)
+    this.props.createChannel(this.contracts["EthereumDIDRegistry"].address, this.props.player1, this.props.player2, topic)
+    //this.props.gameContract.methods.getPlayerBoard(this.props.player1).call().then(console.log)
+    //this.props.gameContract.methods.getPlayerBoard(this.props.player2).call().then(console.log)
+
   };
 
   render() {
@@ -36,22 +54,22 @@ class BoardGame extends Component {
           <div className="pure-u-1-1">
             <h1>The Battle Of The 7 Seas.</h1>
             <h3>Game Address: {this.props.gameAddress}</h3>
-            <Button variant="contained" color="primary" onClick={this.handleChannel}>
-             Start Channel
+            <Button variant="contained" color="primary" onClick={this.handleStart}>
+             Start
             </Button>
           </div>
-            <div className="pure-g-r">
+            <div className="pure-g">
               <div className="pure-u-1-3" style={{width: 300,height: 300}}>
-              <h3>Player 1 Board</h3>
-              {this.props.player1}
-                  <Board player="2"/>
+              <h3>My Board</h3>
+                  {this.props.player1}
+                  <Board num="1"/>
               </div>
               <div className="pure-u-1-3" style={{width: 200}}>
               </div>
               <div className="pure-u-1-3" style={{width: 300,height: 300}}>
-              <h3>Player 2 Board</h3>
-              {this.props.player2}
-                  <Board player="1"/>
+              <h3>Guessing Board</h3>
+                  {this.props.player2}
+                  <Board num="2"/>
               </div>
             </div>
           </div>
@@ -65,7 +83,8 @@ class BoardGame extends Component {
           <DialogTitle id="alert-dialog-title">{"The Adventure Is Just Starting."}</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              We'll travel in history into the times of pirates. Let's the game begin !!!
+              We'll travel through time and space to the moment when pirates dominated the 7 seas. 
+              Let the games begin !!!
                 -- 🎵 Yo-Ho Yo-Ho A Pirate's Life for Me ... 🎶  
             </DialogContentText>
           </DialogContent>
@@ -80,20 +99,26 @@ class BoardGame extends Component {
   }
 }
 
+BoardGame.contextTypes = {
+  drizzle: PropTypes.object
+}
 const mapStateToProps = state => {
   return {
+    EthereumDIDRegistry: state.contracts.EthereumDIDRegistry,
     contracts: state.contracts,
     accounts: state.accounts,
     player1: state.player1,
     player2: state.player2,
     gameAddress: state.gameAddress,
+    gameContract: state.gameContract
   }
 }
 const mapDispatchToProps = (dispatch) => {
   return {
     fetchData: (player) => dispatch(squaresFetchData(player)),
+    createChannel: (registryAddress, identity, identity2, topic) => dispatch(channelCreating(registryAddress, identity, identity2, topic))
   };
 };
 
-export default connect(mapStateToProps,mapDispatchToProps)(BoardGame);
+export default drizzleConnect(BoardGame, mapStateToProps, mapDispatchToProps);
 

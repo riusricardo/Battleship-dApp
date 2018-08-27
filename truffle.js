@@ -1,6 +1,6 @@
 //HD Wallet for keyless servers (infura)
 const HDWalletProvider = require("truffle-hdwallet-provider");
-const TestRPC = require("ganache-cli");
+const ganacheRPC = require("ganache-cli");
 
 let provider
 
@@ -31,19 +31,18 @@ module.exports = {
     ganache: {
       get provider() {
         if (!provider) {
-          provider = TestRPC.provider({total_accounts: 5})
+          provider = ganacheRPC.provider({total_accounts: 15})
         }
         return provider
       },
       network_id: "*",
-      port: 7545,
       gasPrice: 1000000000
     },
     geth_dev: {
       host: "localhost",
-      port: 9545,
-      gas: 6004580,
       network_id: "*",
+      port: 8545,
+      gas: 6704580, // THIS LINE
       gasPrice: 1000000000
     },
     ropsten: {

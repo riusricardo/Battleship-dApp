@@ -7,7 +7,6 @@ import SendIcon from "@material-ui/icons/Send";
 import ethjsABI from 'ethjs-abi'
 import {updatingPlayer1, updatingPlayer2} from '../../../actions/create/updatePlayers'
 import {updatingGameAddress} from '../../../actions/create/updateGameAddress'
-import store from '../../../store';
 
 /*
  * Create component.
@@ -20,15 +19,15 @@ class ContractFormCreate extends Component {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleInputChange = this.handleInputChange.bind(this);
 
-
     this.contracts = context.drizzle.contracts;
 
     this.web3 = context.drizzle.web3;
 
-    // Get the contract ABI
+    // Get the contract ABI for Battleship
     this.BattleshipABI = this.contracts[this.props.factory].abi
+    this.BattleshipContract =  new this.web3.eth.Contract(this.BattleshipABI);
 
-    // Get the contract address
+    // Get the factory contract address
     this.address = this.contracts[this.props.contract].address;
 
     for (let i = 0; i < this.BattleshipABI.length; i++) {
@@ -39,27 +38,35 @@ class ContractFormCreate extends Component {
     }
 
     let initialState = {};
-    initialState["_actor"] = this.props.accounts[this.props.accountIndex];
-    initialState["_actor2"]='';
+    initialState.actor2 ='';
     this.state = initialState;
   }
 
   handleSubmit() {
     const self = this;
+    
+    self.props.updateP1(self.props.accounts[self.props.accountIndex]);
+    self.props.updateP2(self.state.actor2); 
 
-    //this.props.updateP1(self.state["_actor"]); // NOT WORKING on drizzleConnect
-    //this.props.updateP2(self.state["_actor2"]); // NOT WORKING on drizzleConnect
-    store.dispatch(updatingPlayer1(self.state["_actor"]));
-    store.dispatch(updatingPlayer2(self.state["_actor2"]));
+    let actor2 = self.web3.utils.isAddress(self.state.actor2) ? self.state.actor2 : '0x0000000000000000000000000000000000000000';
+    const joinBattle = ethjsABI.encodeMethod(self.BattleshipABI[self.joinPos], [self.props.accounts[self.props.accountIndex], actor2 ]);
 
-    let actor2 = this.web3.utils.isAddress(self.state["_actor2"]) ? self.state["_actor2"] : '0x0000000000000000000000000000000000000000';
-    const joinBattle = ethjsABI.encodeMethod(self.BattleshipABI[self.joinPos], [self.state["_actor"], actor2 ]);
-
-    self.contracts[self.props.contract].methods[self.props.method](self.state["_actor"], joinBattle).estimateGas({from: self.state["_actor"]})
+    self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], joinBattle).estimateGas({from: self.props.accounts[self.props.accountIndex]})
     .then(function(gasAmount){
-      self.contracts[self.props.contract].methods[self.props.method](self.state["_actor"], joinBattle).send({from: self.state["_actor"], gas:gasAmount})
+      self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], joinBattle).send({from: self.props.accounts[self.props.accountIndex], gas:gasAmount})
       .on('receipt', function(receipt){
-        store.dispatch(updatingGameAddress(receipt.events.ContractDeployed.returnValues.deployedAddress));
+
+        self.BattleshipContract.options.address = receipt.events.ContractDeployed.returnValues.deployedAddress;
+          /*// NOT WORKING (Adding Contracts Dynamically) fails: network id.
+          let events = ['GameInitialized','JoinedGame','StateChanged','MoveMade','GameEnded','TimeoutStarted','LogCurrentState','ValidSigner','BetClaimed'];
+          let contractConfig = {
+            contractName: receipt.events.ContractDeployed.returnValues.deployedAddress,
+            web3Contract : self.BattleshipContract
+          }
+          self.context.drizzle.addContract({contractConfig, events});
+          */
+        self.props.updateGameAddress(receipt.events.ContractDeployed.returnValues.deployedAddress);
+        self.props.addGameContract(self.BattleshipContract);
       })
     })
     .catch(function(error){
@@ -72,17 +79,17 @@ class ContractFormCreate extends Component {
   }
 
   handleInputChange(event) {
-    this.setState({ [event.target.name]: event.target.value });
+    this.setState({ actor2:event.target.value });
     
   }
 
   render() {
     return (
       <div>
-      <p><strong>Player 1: </strong></p>{this.state["_actor"]}
+      <p><strong>Player 1: </strong></p>{this.props.accounts[this.props.accountIndex]}
       <p><strong>VS</strong></p>
       <p><strong>Player 2: </strong></p>
-      <input key="_actor2" type="text" name="_actor2" value={this.state["_actor2"]} placeholder={'0x0000000000000000000000000000000000000000'} onChange={this.handleInputChange} style={{width: "385px"}}/>
+      <input key="actor2" type="text" name="actor2" value={this.state.actor2} placeholder={'0x0000000000000000000000000000000000000000'} onChange={this.handleInputChange} style={{width: "385px"}}/>
       <p><Button variant="contained" color="primary" onClick={this.handleSubmit}>
         Create Game  -<SendIcon />
       </Button></p>
@@ -111,7 +118,10 @@ const mapStateToProps = state => {
 const mapDispatchToProps = (dispatch) => {
   return {
     updateP1 : (player) => {dispatch(updatingPlayer1(player))},
-    updateP2 : (player) => {dispatch(updatingPlayer2(player))}
+    updateP2 : (player) => {dispatch(updatingPlayer2(player))},
+    updateGameAddress : (game) => {dispatch(updatingGameAddress(game))},
+    addGameContract: (gameContract) => dispatch({type: 'ADD_GAME_CONTRACT', gameContract})
+
   };
 };
 

@@ -8,8 +8,8 @@ class Square extends Component {
 		const shot = this.props.shot;
 		let backgroundColor = bright ? '#000BBB' : '#000AAA'
 		let color = bright ? '#000AAA' : '#000BBB'
-		backgroundColor = shot === -1 ? '#CC0000' : backgroundColor
-		backgroundColor = shot === -2 ? '#000555' : backgroundColor
+		backgroundColor = shot === 3 ? '#CC0000' : backgroundColor //hit
+		backgroundColor = shot === 2 ? '#000555' : backgroundColor //miss
 		
 		return (
 			<div className="Square"

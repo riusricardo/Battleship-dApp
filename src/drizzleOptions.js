@@ -1,7 +1,7 @@
 import Battleship from './../build/contracts/Battleship.json'
 import ContractFactory from './../build/contracts/ContractFactory.json'
 import GameRegistry from './../build/contracts/GameRegistry.json'
-
+import EthereumDIDRegistry from './../build/contracts/EthereumDIDRegistry.json'
 
 const drizzleOptions = {
   syncAlways:{},
@@ -9,17 +9,19 @@ const drizzleOptions = {
     block: false,
     fallback: {
       type: 'ws',
-      url: 'ws://localhost:9546'
+      url: 'ws://localhost:8546'
     }
   },
   contracts: [
     ContractFactory,
-    GameRegistry
-    ,Battleship
+    GameRegistry,
+    EthereumDIDRegistry,
+    Battleship
   ],
   events: {
     GameRegistry: ['GameOwnerSet','PlayerSet','WinnerSet','PlayerBoardSet'],
-    ContractFactory: ['ContractDeployed']
+    ContractFactory: ['ContractDeployed'],
+    EthereumDIDRegistry: []
     //,Battleship: ['GameInitialized','JoinedGame','StateChanged','MoveMade','WonChallenged','GameEnded','TimeoutStarted','LogCurrentState','ValidSigner','BetClaimed']
   },
   polls: {

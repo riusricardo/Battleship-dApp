@@ -11,8 +11,9 @@ import App from './App'
 import Home from './layouts/home/Home'
 import { LoadingContainer } from 'drizzle-react-components'
 import Boardgame from './layouts/boardgame/Boardgame'
-import createContainer from './layouts/create/createContainer'
+import create from './layouts/create/create'
 import gamesContainer from './layouts/games/gamesContainer'
+import gameStats from './layouts/games/gameStats'
 import Profile from './layouts/profile/Profile'
 
 import store from './store'
@@ -22,14 +23,15 @@ import drizzleOptions from './drizzleOptions'
 const history = syncHistoryWithStore(browserHistory, store)
 
 ReactDOM.render((
-  <DrizzleProvider options={drizzleOptions}>
+  <DrizzleProvider options={drizzleOptions} store={store}>
     <Provider store={store}>
       <LoadingContainer>
         <Router history={history}>
           <Route path="/" component={App}>
             <IndexRoute component={Home} />
             <Route path="games" component={UserIsAuthenticated(gamesContainer)} />
-            <Route path="create" component={UserIsAuthenticated(createContainer)} />
+            <Route path="create" component={UserIsAuthenticated(create)} />
+            <Route path="gameStats" component={UserIsAuthenticated(gameStats)} />
             <Route path="boardgame" component={UserIsAuthenticated(Boardgame)} />
             <Route path="profile" component={UserIsAuthenticated(Profile)} />
           </Route>

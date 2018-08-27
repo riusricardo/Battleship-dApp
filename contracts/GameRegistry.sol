@@ -17,8 +17,8 @@ contract GameRegistry {
     
     mapping(address => bool) public gameList;
     mapping(address => Game) public games;
-    mapping(address => address[]) public playerGames;
     mapping(address => uint) public changed;
+    mapping(address => address[]) public playerGames;
 
     constructor() public {
         owner = msg.sender;
@@ -92,6 +92,11 @@ contract GameRegistry {
         if(_num == 1){games[msg.sender].gamePlayerBoard1 = _board;}
         if(_num == 2){games[msg.sender].gamePlayerBoard2 = _board;}
         emit PlayerBoardSet(msg.sender, _player, "Player gameboard set.");
+    }
+
+    function getPlayerGames(address _player) external view returns(address[]){
+        address[] storage list = playerGames[_player];
+        return list;
     }
 
 }

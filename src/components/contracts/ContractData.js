@@ -13,7 +13,7 @@ class ContractData extends Component {
     this.contracts = context.drizzle.contracts
 
     // Get the contract ABI
-    const abi = this.contracts[this.props.contract].abi;
+    //const abi = this.contracts[this.props.contract].abi;
 
     // Fetch initial value from chain and return cache key for reactive updates.
     var methodArgs = this.props.methodArgs ? this.props.methodArgs : []
@@ -45,6 +45,7 @@ class ContractData extends Component {
 
     var displayData = this.props.contracts[this.props.contract][this.props.method][this.dataKey].value
 
+
     // Optionally convert to UTF8
     if (this.props.toUtf8) {
       displayData = this.context.drizzle.web3.utils.hexToUtf8(displayData)
@@ -56,11 +57,10 @@ class ContractData extends Component {
     }
 
     // If return value is an array
-    if (typeof displayData === 'array') {
+    if (displayData instanceof Array) {
       const displayListItems = displayData.map((datum, index) => {
-        <li key={index}>{`${datum}`}{pendingSpinner}</li>
+        return <li key={index}>{`${datum}`}{pendingSpinner}</li>
       })
-
       return(
         <ul>
           {displayListItems}
@@ -69,7 +69,7 @@ class ContractData extends Component {
     }
 
     // If retun value is an object
-    if (typeof displayData === 'object') {
+    if (displayData instanceof Object) {
       var i = 0
       const displayObjectProps = []
 

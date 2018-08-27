@@ -19,12 +19,24 @@ export function squaresIsLoading(state = false, action) {
     }
 }
 
-export function squares(state = [], action) {
+export function squares1(state = [], action) {
     switch (action.type) {
-        case 'SQUARES_FETCH_DATA_SUCCESS':
+        case 'SQUARES1_FETCH_DATA_SUCCESS':
             return action.squares;
 
         default:
             return state;
     }
 }
+
+export function squares2(state = [], action) {
+    switch (action.type) {
+        case 'SQUARES2_FETCH_DATA_SUCCESS':
+        return action.squares;
+
+        default:
+            return state;
+    }
+}
+
+

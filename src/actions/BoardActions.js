@@ -12,41 +12,53 @@ export function squaresIsLoading(bool) {
         isLoading: bool
     };
 }
-export function squaresFetchDataSuccess(squares) {
-    return {
-        type: 'SQUARES_FETCH_DATA_SUCCESS',
-        squares
-    };
+export function squaresFetchDataSuccess(squares,player) {
+    switch (player) {
+        case 1:
+            return {
+                type: 'SQUARES1_FETCH_DATA_SUCCESS',
+                squares
+            };
+
+        case 2:
+            return {
+                type: 'SQUARES2_FETCH_DATA_SUCCESS',
+                squares
+            };
+
+        default:
+            return squares;
+    }
+
 }
 
-var board = [];
-board["1"] = 
-[0,0,0,-1,0,0,0,0,0,0
+var board = []; //hit: 3 miss:2 ship:1
+board[1] = 
+[0,0,0,3,0,0,0,0,0,0
 ,1,0,0,0,0,0,0,0,0,0
-,-1,0,-2,-2,0,0,0,1,0,0
-,1,0,0,-1,0,0,0,0,0,0
-,0,0,0,0,0,-2,0,1,0,0
-,-1,0,0,0,0,0,0,0,0,0
-,0,0,0,0,0,0,-2,0,0,-2
-,1,0,0,-1,0,0,0,0,0,0
-,0,0,0,-1,0,0,0,0,0,0
-,1,0,0,-1,0,0,0,0,0,0];
-board["2"] = 
-[1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0
-,1,0,0,0,0,0,0,0,0,0];
+,3,0,2,2,0,0,0,1,0,0
+,1,0,0,3,0,0,0,0,0,0
+,0,0,0,0,0,2,0,1,0,0
+,3,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,2,0,0,2
+,1,0,0,3,0,0,0,0,0,0
+,0,0,0,3,0,0,0,0,0,0
+,1,0,0,3,0,0,0,0,0,0];
+board[2] = 
+[0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0
+,0,0,0,0,0,0,0,0,0,0];
 
 export function squaresFetchData(player) { 
-    return (dispatch) => {dispatch(squaresFetchDataSuccess(board[player]))};
+    return (dispatch) => {dispatch(squaresFetchDataSuccess(board[player],player))};
 }
-
 
 /*
 export function squaresFetchData(url) {
