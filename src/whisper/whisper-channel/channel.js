@@ -12,7 +12,7 @@ import interval from 'interval-promise'
 import resolver from 'did-resolver'
 import store from '../../store'
 import {joinChannelSucceded,joinChannelIsWaiting,joinChannelErrored} from '../../actions/whisper/joinedChannel'
-
+import { squaresFetchData } from '../../actions/BoardActions';
 
 class Channel {
     constructor (conf = {}) {
@@ -275,7 +275,8 @@ class Channel {
                                     jwt: data.jwt,
                                     nonce: message.nonce, 
                                     hash: message.hash}
-                                ); 
+                                    ); 
+                                    store.dispatch(squaresFetchData(1));
                             }else{ console.log("Invalid message received in channel")}
                         })
                     }

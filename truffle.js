@@ -31,18 +31,19 @@ module.exports = {
     ganache: {
       get provider() {
         if (!provider) {
-          provider = ganacheRPC.provider({total_accounts: 15})
+          provider = ganacheRPC.provider({total_accounts: 6, network_id: 1337})
         }
         return provider
       },
-      network_id: "*",
+      network_id: 1337,
+      gas: 0x6691b7,
       gasPrice: 1000000000
     },
     geth_dev: {
       host: "localhost",
-      network_id: "*",
+      network_id: 1337,
       port: 8545,
-      gas: 6704580, // THIS LINE
+      gas: 0x6691b7, // THIS LINE
       gasPrice: 1000000000
     },
     ropsten: {

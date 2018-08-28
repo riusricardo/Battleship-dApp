@@ -229,7 +229,7 @@ contract Battleship is StateMachine {
         uint size = tmpBoard.length; 
         uint8 requiredToWin = 20;
 
-
+        
         
         if(hitsToPlayer[opponent(msg.sender)] == requiredToWin){
             winner = msg.sender;
