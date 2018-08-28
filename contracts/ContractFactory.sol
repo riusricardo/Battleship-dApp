@@ -68,18 +68,18 @@ contract ContractFactory {
         emit FabricLocked(owner, "The fabric bytecode became not upgradable.");
     }
 
-    function createAndCall(address _actor, bytes _data) external payable {
+    function createAndCall(address _actor, address _actor2, bytes _data) external payable {
         address deployed = _deployCode(bytecode);
-        require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address)")), abi.encode(deployed,_actor)));
+        require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address,address)")), abi.encode(deployed,_actor,_actor2)));
         require(deployed.call(bytes4(keccak256("setEthReg(address)")), abi.encode(ethReg)));
         require(deployed.call(bytes4(keccak256("setGameReg(address)")), abi.encode(gameReg)));
         require(deployed.call.value(msg.value)(_data),"Failed to send data.");
         emit ContractDeployed(_actor, deployed);
     }
 
-    function createContract(address _actor) external {
+    function createContract(address _actor, address _actor2) external {
         address deployed = _deployCode(bytecode);
-        require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address)")), abi.encode(deployed,_actor)));
+        require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address,address)")), abi.encode(deployed,_actor,_actor2)));
         require(deployed.call(bytes4(keccak256("setEthReg(address)")), abi.encode(ethReg)));
         require(deployed.call(bytes4(keccak256("setGameReg(address)")), abi.encode(gameReg)));
         emit ContractDeployed(_actor, deployed);      

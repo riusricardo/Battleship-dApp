@@ -54,20 +54,20 @@ contract GameRegistry {
     event PlayerSet(address indexed gameAddress, string message);
     event WinnerSet(address indexed gameAddress, string message);
     event PlayerBoardSet(address indexed gameAddress, address player, string message);
-    event CreatedGame(address indexed gameAddress, address indexed player, uint previousChange);
+    event CreatedGame(address indexed gameAddress, address indexed player1, address indexed player2, uint previousChange);
 
     function setFactory(address _factory) external ifOwner{
         factory = _factory;
     }
 
-    function setFactoryGame(address _contract, address _actor) external ifFactory{
+    function setFactoryGame(address _contract, address _actor, address _actor2) external ifFactory{
         gameList[_contract] = true;
-        setGame(_contract, _actor);
+        setGame(_contract, _actor, _actor2);
     }
 
-    function setGame(address _gameAddress, address _actor) internal ifFactory{
-        emit CreatedGame(_gameAddress, _actor, changed[_actor]);
+    function setGame(address _gameAddress, address _actor, address _actor2) internal ifFactory{
         changed[_actor] = block.number;
+        emit CreatedGame(_gameAddress, _actor, _actor2, changed[_actor]);
     }
 
     function setGameOwner() external ifFactoryGame{

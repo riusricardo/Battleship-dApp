@@ -62,9 +62,9 @@ class ContractFormCreate extends Component {
     let actor2 = self.web3.utils.isAddress(self.state.actor2) ? self.state.actor2 : '0x0000000000000000000000000000000000000000';
     const joinBattle = ethjsABI.encodeMethod(self.BattleshipABI[self.joinGamePos], [self.props.accounts[self.props.accountIndex], actor2, topic ]);
 
-    self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], joinBattle).estimateGas({from: self.props.accounts[self.props.accountIndex]})
+    self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], actor2, joinBattle).estimateGas({from: self.props.accounts[self.props.accountIndex]})
     .then(function(gasAmount){
-      self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], joinBattle).send({from: self.props.accounts[self.props.accountIndex], gas:gasAmount})
+      self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], actor2, joinBattle).send({from: self.props.accounts[self.props.accountIndex], gas:gasAmount})
       .on('receipt', function(receipt){
 
         self.BattleshipContract.options.address = receipt.events.ContractDeployed.returnValues.deployedAddress;

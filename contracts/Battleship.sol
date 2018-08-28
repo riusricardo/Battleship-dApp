@@ -16,8 +16,6 @@ contract Battleship is StateMachine {
 
     address public owner;
     string public topic; // Whisper-channel topic
-    address internal ethrReg;// Ethr DID registry
-    address internal gameReg;// Game registry
     address public player1;
     address public player2;
     address public currentPlayer;
@@ -25,11 +23,15 @@ contract Battleship is StateMachine {
     uint8 public nonce;
     uint public betAmt;
     uint public timeout;
-    uint internal timeoutInterval;
-    mapping(address => int8[]) internal playerBoard;
-    mapping(address => bytes32) internal hiddenBoards;
-    mapping(address => int8) internal hitsToPlayer;
     mapping(address => address) public playerSigner;
+    mapping(address => uint8[]) internal playerMoves;
+    mapping(address => bytes32) internal hiddenBoards;
+    mapping(address => uint8[]) internal playerBoard;
+    mapping(address => uint8) internal hitsToPlayer;
+    address internal ethrReg;// Ethr DID registry
+    address internal gameReg;// Game registry
+    uint internal timeoutInterval;
+    
 
 
     constructor() public payable{
@@ -52,6 +54,7 @@ contract Battleship is StateMachine {
     event JoinedGame(address player, string message);
     event StateChanged(string newState);
     event MoveMade(address currentPlayer, uint8 xy);
+    event RevealedBoard(address Player, uint blockNum);
     event GameEnded(address winner);
     event TimeoutStarted();
     event BetClaimed(address player, uint amount);
@@ -68,43 +71,66 @@ contract Battleship is StateMachine {
             revert("Not owner");
         }
     }
-
-    /// @dev Allow functions in the given state.
-    function setupStates() internal {
-        setStates(states);
-
-        allowFunction(STATE1, this.joinGame.selector);      //"Create"
-        allowFunction(STATE2, this.setHiddenBoard.selector);//"Set"
-        allowFunction(STATE3, this.move.selector);          //"Play"
-        allowFunction(STATE3, this.signedMove.selector);    //"Play"
-        allowFunction(STATE3, this.claimWin.selector);      //"Play"
-        allowFunction(STATE3, this.startTimeout.selector);  //"Play"
-        allowFunction(STATE4, this.claimBet.selector);      //"GameOver"
-
-        addStartCondition(STATE2, verifyPlayers);           //"Set"
-        addStartCondition(STATE3, verifyBoard);             //"Play"
-        addStartCondition(STATE4, verifyWinner);            //"GameOver"
-        addStartCondition(STATE4, verifyTimeout);           //"GameOver"
-
+    
+    /// @dev Get the final revealed board.
+    /// @param _player The address of the selected player..
+    /// @return Board array.
+    function getPlayerMoves(address _player) external returns(uint8[]){
+        uint8[] storage board = playerMoves[_player];
+        return board;
     }
+
+    /// @dev Get the final revealed board.
+    /// @param _player The address of the selected player..
+    /// @return Board array.
+    function getPlayerBoard(address _player) external returns(uint8[]){
+        uint8[] storage board = playerBoard[_player];
+        return board;
+    }
+
+    /// @dev Set the Ethr DID registry for identity management.
+    /// @param _ethrReg The address of the Ethr DID registry.
     function setEthReg(address _ethrReg) public ifOwner{
         require(ethrReg == address(0), "Registry already set.");
         ethrReg = _ethrReg;
-
-    }
+    }    
+    
+    /// @dev Set the Game registry to store game stats.
+    /// @param _gameReg The address of the Game registry.
     function setGameReg(address _gameReg) public ifOwner{
         require(gameReg == address(0), "Registry already set.");
         gameReg = _gameReg;
-
     }
 
-    /// @dev A different player can join the game if not specified during deployment. Player2 needs to join and send bet amount.
+    /// @dev Claim bet if the player is the  winner. By expired timeout or moves.
+    function claimBet() public checkAllowed ifPlayer {
+        require(player2 != address(0), "Game has not started.");
+        
+        if(block.timestamp >= timeout && msg.sender == opponent(currentPlayer)){
+            winner = opponent(currentPlayer);
+            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
+        }
+        
+        if(msg.sender == winner)
+        {
+            winner.transfer(address(this).balance);
+            emit BetClaimed(msg.sender, betAmt * 2);
+        } else {
+            revert("You are a loser :( ");
+        }
+    }
+
+    /// @dev Join the game and set the bet. Player 1 is set by factory contract. 
+    /// @dev Player 2 can join later or be set at creation time.
+    /// @param _playerA Player 1 address.
+    /// @param _playerB Player 2 address.
+    /// @param _topic Whisper-channel topic.
     function joinGame(address _playerA, address _playerB, string _topic) public payable checkAllowed {
         require(gameReg != address(0), "Game registry not set.");
         require(_playerA != owner && _playerB != owner, "The Factory cannot play.");
         require(msg.value >= betAmt,"Invalid bet amount.");
         
-        // The Factory is the owner and cannot register as player.
+        // The Factory is the contract owner and cannot register as player.
         if( _playerA != address(0) && player1 == address(0) && msg.sender == owner){
             player1 = _playerA;
             topic = _topic;
@@ -129,6 +155,7 @@ contract Battleship is StateMachine {
             require(msg.value == betAmt, "Wrong bet amount.");
             player2 = msg.sender;
         }
+
         // Player 2 was passed as parameter without bet.
         if(msg.sender == player2){
             require(msg.value == betAmt, "Wrong bet amount.");
@@ -137,11 +164,109 @@ contract Battleship is StateMachine {
             emit JoinedGame(msg.sender, "Player2");   
         } 
 
+        // If not a VIP identity, get out.
         if( !(msg.sender == owner || msg.sender == player1 || msg.sender == player2)){
             revert("Invalid Player");
         } 
     }
 
+    /// @dev Set the hash of your board.
+    /// @param _boardHash The player's grid hash.
+    /// @param _sig Message signature to get signer.
+    function setHiddenBoard(bytes32 _boardHash, bytes _sig) public checkAllowed ifPlayer {
+        require(_boardHash != bytes32(0) && _sig.length == 65);
+        require(hiddenBoards[msg.sender] == bytes32(0) || playerSigner[msg.sender] == address(0));
+        
+        //Get signer delegate from board signature.
+        address signer = UtilsLib.recoverSigner(_boardHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
+        
+        //isValidDelegate(msg.sender, UtilsLib.stringToBytes32('Secp256k1VerificationKey2018'), signer);
+        isValidDelegate(msg.sender, hex"766572694b657900000000000000000000000000000000000000000000000000", signer);
+        hiddenBoards[msg.sender] = _boardHash;
+    }
+
+    /// @dev Play on-chain.
+    /// @param _xy Coordinates in the X and Y planes.
+    /// @param _nonce Game moves sequence nonce.
+    function move(uint8 _xy, uint8 _nonce) public checkAllowed ifPlayer {
+        require(_xy >= 0 && _xy <= 99,"Out of range.");
+        require(nonce >= 0 && nonce <= 200, "Incorrect sequence number.");
+        require(_nonce == nonce && _nonce >= 0, "Incorrect sequence number.");
+        
+        playerMoves[msg.sender].push(_xy);
+        currentPlayer = opponent(msg.sender);
+        nonce += 1;
+        
+        // Reset timeout
+        timeout = 2**256 - 1;
+
+        if(nonce >= 199){
+            claimWin();
+        }
+        emit MoveMade(msg.sender,_xy);
+    }
+
+    /// @dev Reveal board.
+    /// @param _board The player's board.
+    /// @param _sig Message signature to get signer.
+    function revealBoard(uint8[] _board, bytes _sig, bytes4 _secret) public checkAllowed ifPlayer {
+        require(_sig.length == 65 && _secret != bytes4(0));
+        require(hiddenBoards[msg.sender] != bytes32(0) && playerSigner[msg.sender] != address(0));
+        
+        bytes32 hash = keccak256(abi.encodePacked(_board, _secret, address(this)));
+        address signer = UtilsLib.recoverSigner(hash, _sig); //Get signer delegate from board signature.
+        require(signer == playerSigner[msg.sender], "Invalid signer.");
+
+        for(uint8 i = 0; i < 100; i++){
+            playerBoard[msg.sender].push(_board[i]);
+        }
+        emit RevealedBoard(msg.sender, block.timestamp);
+    }
+    
+    /// @dev Claim player as winner. Boards need to be revealed.
+    function claimWin() public checkAllowed ifPlayer {
+        uint8[] storage tmpBoard = playerBoard[msg.sender];
+        uint size = tmpBoard.length; 
+        uint8 requiredToWin = 20;
+
+
+        
+        if(hitsToPlayer[opponent(msg.sender)] == requiredToWin){
+            winner = msg.sender;
+            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
+            
+        }
+    }
+
+    /// @dev Start timeout in case of game halt.
+    function startTimeout() public  checkAllowed ifPlayer {
+        require(currentPlayer == opponent(msg.sender),"Cannot start timeout.");
+        timeout = block.timestamp + timeoutInterval;
+        emit TimeoutStarted();
+    }
+
+    /// @dev Allow functions in the given state. From StateMachine@TokenFoundry.
+    function setupStates() internal {
+        setStates(states);
+
+        allowFunction(STATE1, this.joinGame.selector);      //"Create"
+        allowFunction(STATE2, this.setHiddenBoard.selector);//"Set"
+        allowFunction(STATE3, this.move.selector);          //"Play"
+        allowFunction(STATE3, this.claimWin.selector);      //"Play"
+        allowFunction(STATE3, this.startTimeout.selector);  //"Play"
+        allowFunction(STATE3, this.revealBoard.selector);   //"Play"
+        allowFunction(STATE4, this.claimBet.selector);      //"GameOver"
+
+        addStartCondition(STATE2, verifyPlayers);           //"Set"
+        addStartCondition(STATE3, verifyBoard);             //"Play"
+        addStartCondition(STATE4, verifyRevealedBoards);    //"GameOver"        
+        addStartCondition(STATE4, verifyWinner);            //"GameOver"
+        addStartCondition(STATE4, verifyTimeout);           //"GameOver"
+
+    }
+
+    /// @dev Verify player conditions to transition to next state.
+    /// @return If conditions met returns true.
     function verifyPlayers(bytes32) internal returns(bool){
         if(currentPlayer == player2 && player1 != address(0) && player2 != address(0)){
             emit StateChanged("Set");
@@ -151,21 +276,8 @@ contract Battleship is StateMachine {
         }
     }
 
-    /// @dev Initialize the board.
-    /// @param _boardHash The player's grid.
-    /// @param _sig Message signature to get signer.
-    function setHiddenBoard(bytes32 _boardHash, bytes _sig) public checkAllowed ifPlayer {
-        require(_boardHash != bytes32(0) && _sig.length == 65);
-        require(hiddenBoards[msg.sender] == bytes32(0) || playerSigner[msg.sender] == address(0));
-        
-        //Get signer delegate
-        address signer = UtilsLib.recoverSigner(_boardHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
-        //isValidDelegate(msg.sender, UtilsLib.stringToBytes32('Secp256k1VerificationKey2018'), signer);
-        isValidDelegate(msg.sender, hex"766572694b657900000000000000000000000000000000000000000000000000", signer);
-        
-        hiddenBoards[msg.sender] = _boardHash;
-    }
-
+    /// @dev Verify boards ready conditions to transition to next state.
+    /// @return If conditions met returns true.
     function verifyBoard(bytes32) internal returns(bool){
         if( hiddenBoards[player1] != bytes32(0) 
             && hiddenBoards[player2] != bytes32(0)
@@ -180,58 +292,20 @@ contract Battleship is StateMachine {
         }
     }
 
-    /// @dev Play on-chain.
-    /// @param _xy Coordinates in the X and Y planes.
-    function move(uint8 _xy, uint8 _nonce) public checkAllowed ifPlayer {
-        require(_xy >= 0 && _xy <= 99,"Out of range.");
-        require(playerBoard[opponent(msg.sender)][_xy] >= 0, "Cannot shoot here.");
-        require(nonce >= 0 && nonce <= 200, "Incorrect sequence number.");
-        require(_nonce == nonce && _nonce >= 0, "Incorrect sequence number.");
-        
-        nonce++;
-        currentPlayer = opponent(msg.sender);
-        
-        // Clear timeout
-        timeout = 2**256 - 1;
-
-        // VALIDATE WINNER. no way. someone needs to claim itself winner. 
-        //If shipps available from his opponent he looses. 
-        if(nonce >= 199){
-            claimWin();
-        }
-
-        emit MoveMade(msg.sender,_xy);
-    }
-
-    /// @dev Play off-chain.
-    /// @param _xy Coordinates in the X and Y planes.
-    function signedMove(uint8 _nonce, uint8[] _boardState, bytes _sig, uint8 _xy) public checkAllowed ifPlayer {
-        require(_sig.length == 65);
-        require(_xy >= 0 && _xy <= 99,"Out of range.");
-        require(_nonce >= nonce, "Sequence number cannot go backwards.");
-
-        bytes32 message = keccak256(abi.encodePacked(address(this), _nonce, _xy, _boardState));
-        address signer = UtilsLib.recoverSigner(message, _sig);
-
-        require(playerSigner[opponent(msg.sender)] == signer, "Invalid signer.");
-        
-        nonce = _nonce;
-        //num = _xy;
-        currentPlayer = msg.sender;
-
-        move(_xy, nonce);
-    }
-    
-    function claimWin() public checkAllowed ifPlayer {
-        int8 requiredToWin = 20;
-        
-        if(hitsToPlayer[opponent(msg.sender)] == requiredToWin){
-            winner = msg.sender;
-            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
-            
+    /// @dev Verify revealed boards conditions to transition to next state.
+    /// @return If conditions met returns true. 
+    function verifyRevealedBoards(bytes32) internal returns(bool){
+        if(playerBoard[player1].length == 100 && playerBoard[player2].length == 100){
+            emit StateChanged("GameOver");
+            emit GameEnded(winner);
+            return true;
+        }else {
+            return false;
         }
     }
-    
+
+    /// @dev Verify winner player conditions to transition to next state.
+    /// @return If conditions met returns true. 
     function verifyWinner(bytes32) internal returns(bool){
         if(winner != address(0)){
             emit StateChanged("GameOver");
@@ -242,13 +316,8 @@ contract Battleship is StateMachine {
         }
     }
 
-    /// @dev Start timeout in case of game halt.
-    function startTimeout() public  checkAllowed ifPlayer {
-        require(currentPlayer == opponent(msg.sender),"Cannot start timeout.");
-        timeout = block.timestamp + timeoutInterval;
-        emit TimeoutStarted();
-    }
-
+    /// @dev Verify timeout to finalize game.
+    /// @return If conditions met returns true.
     function verifyTimeout(bytes32) internal returns(bool){
         if(block.timestamp >= timeout){
             emit StateChanged("GameOver");
@@ -256,32 +325,6 @@ contract Battleship is StateMachine {
         }else {
             return false;
         }
-    }
-    
-    /// @dev Claim bet if timeout expired.
-    function claimBet() public checkAllowed ifPlayer {
-        require(player2 != address(0), "Game has not started.");
-        
-        if(block.timestamp >= timeout && msg.sender == opponent(currentPlayer)){
-            winner = opponent(currentPlayer);
-            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
-        }
-        
-        if(msg.sender == winner)
-        {
-            winner.transfer(address(this).balance);
-            emit BetClaimed(msg.sender, betAmt * 2);
-        } else {
-            revert("You are a loser :( ");
-        }
-    }
-
-    /// @dev Get the final revealed board.
-    /// @param _player The address of the selected player..
-    /// @return Board array.
-    function getPlayerBoard(address _player) external returns(int8[]){
-        int8[] storage board = playerBoard[_player];
-        return board;
     }
 
     /// @dev Get the opponent player.
