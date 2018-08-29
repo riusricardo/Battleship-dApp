@@ -9,7 +9,7 @@ const drizzleOptions = {
     block: false,
     fallback: {
       type: 'ws',
-      url: 'ws://localhost:8546'
+      url: 'ws://localhost:8545'
     }
   },
   contracts: [

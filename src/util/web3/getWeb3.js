@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import HttpProvider from 'ethjs-provider-http'
 
-const providerFallback = new HttpProvider('http://localhost:8545');
+const providerFallback = new HttpProvider('http://localhost:8547');
 const web3Fallback = new Web3(providerFallback);
 
 let getWeb3 = new Promise(function(resolve, reject) {

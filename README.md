@@ -1,3 +1,5 @@
+### :warning: This project will continue its development on the develop branch. :warning:
+
 # Battleship-dApp ![CI status](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
 The Battleship dApp is a decentralized game. The application uses Ethereum Whisper as its principal communication layer. Each move has a nonce and is signed by the player enabling a fast and fluid game without the need to wait mined blocks. The identities and signers are managed on the EthrDID Registry.
@@ -11,16 +13,24 @@ You can play against anyone in the other side of the world and even bet on the f
 * Geth 1.8 and up
 * Truffle Framework
 * Yarn
+* Ganache-cli
+* uPort App
 
-`$ yarn install`
-`$ truffle compile`
-`$ truffle migrate --network ganache`
+```
+$ (Terminal 1)yarn install
+$ (Terminal 1)truffle compile
+```
 
 ## Usage
 
-`$ yarn run geth-dev`
-`$ truffle migrate --network geth_dev --reset`
-`$ yarn start`
+```
+$ (Terminal 2)yarn run ganache_dev
+$ (Terminal 1)truffle migrate --network ganache_dev
+$ (Terminal 3)yarn geth-dev:whisper
+$ (Terminal 1)yarn start
+```
+Login with your mobile uPort App.
+
 
 ```
 Available Accounts

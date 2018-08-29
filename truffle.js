@@ -31,20 +31,27 @@ module.exports = {
     ganache: {
       get provider() {
         if (!provider) {
-          provider = ganacheRPC.provider({total_accounts: 6, network_id: 1337})
+          provider = ganacheRPC.provider({total_accounts: 6, network_id: 1335, gasLimit:8000000, gasPrice: 20000000000})
         }
         return provider
       },
-      network_id: 1337,
-      gas: 0x6691b7,
-      gasPrice: 1000000000
+      network_id: 1335,
+      gas: 8000000,
+      gasPrice: 20000000000
     },
-    geth_dev: {
+    ganache_dev: {
+      host: "localhost",
+      network_id: 1335,
+      port: 8545,
+      gas: 8000000,
+      gasPrice: 20000000000
+    },
+    geth_dev: { // Race condition bugs with truffle.
       host: "localhost",
       network_id: 1337,
       port: 8545,
-      gas: 0x6691b7, // THIS LINE
-      gasPrice: 1000000000
+      gas: 800000000, // THIS LINE
+      gasPrice: 20000000000
     },
     ropsten: {
       get provider() {

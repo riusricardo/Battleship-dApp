@@ -1,5 +1,5 @@
 # seed
-*key.json
+#key.json
 build/
 chaindata/
 *LOCK
