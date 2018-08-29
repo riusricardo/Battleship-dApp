@@ -24,7 +24,7 @@ $ (Terminal 1)truffle compile
 ## Usage
 
 ```
-$ (Terminal 2)yarn run ganache_dev
+$ (Terminal 2)yarn run ganache-dev
 $ (Terminal 1)truffle migrate --network ganache_dev
 $ (Terminal 3)yarn geth-dev:whisper
 $ (Terminal 1)yarn start
