@@ -64,7 +64,7 @@ class ContractFormCreate extends Component {
 
     self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], actor2, joinBattle).estimateGas({from: self.props.accounts[self.props.accountIndex]})
     .then(function(gasAmount){
-      self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], actor2, joinBattle).send({from: self.props.accounts[self.props.accountIndex], gas:gasAmount})
+      self.contracts[self.props.contract].methods[self.props.method](self.props.accounts[self.props.accountIndex], actor2, joinBattle).send({from: self.props.accounts[self.props.accountIndex], value:self.web3.utils.toWei("0.1", "ether") ,gas:(gasAmount + 500000)})
       .on('receipt', function(receipt){
 
         self.BattleshipContract.options.address = receipt.events.ContractDeployed.returnValues.deployedAddress;

@@ -38,18 +38,11 @@ class Channel {
             this.web3 = results.web3Instance;
             this.provider = results.web3Provider;
             try {
-                this.web3.shh.getVersion()
-                .then(version => {
-                    if (version >= 5) {
-                        this.eth = new Eth(this.provider)
-                        this.DidReg = new EthContract(this.eth)(RegistryContractABI)
-                        this.ethrDid = new EthrDID({provider: this.provider, registry: this.registryAddress, address: this.identity});
-                        this.whisper = new Whisper();
-                        this.registry = this.DidReg.at(this.registryAddress)
-                    }else {throw new Error("Version of whisper not supported");}
-                    return {valid:true};
-                }).catch(
-                    err => {throw new Error("error: unable to get whisper shh version. ",err)}); 
+                this.eth = new Eth(this.provider)
+                this.DidReg = new EthContract(this.eth)(RegistryContractABI)
+                this.ethrDid = new EthrDID({provider: this.provider, registry: this.registryAddress, address: this.identity});
+                this.whisper = new Whisper();
+                this.registry = this.DidReg.at(this.registryAddress)
             } catch (err) {console.log("Channel init error: ",err);}
         }).catch(console.log);
     }

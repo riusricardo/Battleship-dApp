@@ -42,15 +42,22 @@ module.exports = {
     ganache_dev: {
       host: "localhost",
       network_id: 1335,
-      port: 8545,
+      port: 8546,
       gas: 8000000,
       gasPrice: 20000000000
     },
-    geth_dev: { // Race condition bugs with truffle.
+    geth_dev: { 
       host: "localhost",
       network_id: 1337,
       port: 8545,
-      gas: 800000000, // THIS LINE
+      gas: 6283185, //geth --dev gas limit is 6283185
+      gasPrice: 20000000000
+    },
+    geth_priv: {
+      host: "localhost",
+      network_id: 1337,
+      port: 8545,
+      gas: 8000000,
       gasPrice: 20000000000
     },
     ropsten: {
