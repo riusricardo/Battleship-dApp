@@ -28,7 +28,7 @@ contract GameRegistry {
         if(msg.sender == owner) {
             _;
         } else {
-            revert("Not owner");
+            revert(", not owner.");
         }
     }
 
@@ -36,17 +36,17 @@ contract GameRegistry {
         if(msg.sender == factory) {
             _;
         } else {
-            revert("Not factory");
+            revert(", not factory.");
         }
     }
 
     modifier ifGameOwner() {
-        require (msg.sender == games[msg.sender].gameContract,"Game not found.");
+        require (msg.sender == games[msg.sender].gameContract,", game not found.");
         _;
     }
 
     modifier ifFactoryGame(){
-        require(gameList[msg.sender],"Game not created by the factory.");
+        require(gameList[msg.sender],", game not created by the factory.");
         _;
     }
 

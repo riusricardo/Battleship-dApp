@@ -26,8 +26,10 @@ contract Battleship is StateMachine {
     mapping(address => address) public playerSigner;
     mapping(address => uint8[]) internal playerMoves;
     mapping(address => bytes32) internal hiddenBoards;
+    mapping(address => uint8[]) internal receivedShips;
     mapping(address => uint8[]) internal playerBoard;
     mapping(address => uint8) internal hitsToPlayer;
+    mapping(address => uint8) internal hitsAgainstPlayer;
     address internal ethrReg;// Ethr DID registry
     address internal gameReg;// Game registry
     uint internal timeoutInterval;
@@ -54,13 +56,13 @@ contract Battleship is StateMachine {
     event JoinedGame(address player, string message);
     event StateChanged(string newState);
     event MoveMade(address currentPlayer, uint8 xy);
-    event RevealedBoard(address Player, uint blockNum);
+    event RevealedBoard(address player, uint blockNum);
     event GameEnded(address winner);
-    event TimeoutStarted();
-    event BetClaimed(address player, uint amount);
+    event TimeoutStarted(uint timestamp);
+    event BetClaimed(address player, uint amount, uint timestamp);
 
     modifier ifPlayer() {
-        require(msg.sender == player1 || msg.sender == player2, "Invalid Player");
+        require(msg.sender == player1 || msg.sender == player2, ", not a valid player.");
         _;
     }
     
@@ -68,7 +70,7 @@ contract Battleship is StateMachine {
         if(msg.sender == owner) {
             _;
         } else {
-            revert("Not owner");
+            revert(", not game contract owner.");
         }
     }
     
@@ -91,20 +93,20 @@ contract Battleship is StateMachine {
     /// @dev Set the Ethr DID registry for identity management.
     /// @param _ethrReg The address of the Ethr DID registry.
     function setEthReg(address _ethrReg) public ifOwner{
-        require(ethrReg == address(0), "Registry already set.");
+        require(ethrReg == address(0), ", ethr registry already set.");
         ethrReg = _ethrReg;
     }    
     
     /// @dev Set the Game registry to store game stats.
     /// @param _gameReg The address of the Game registry.
     function setGameReg(address _gameReg) public ifOwner{
-        require(gameReg == address(0), "Registry already set.");
+        require(gameReg == address(0), ", game registry already set.");
         gameReg = _gameReg;
     }
 
     /// @dev Claim bet if the player is the  winner. By expired timeout or moves.
     function claimBet() public checkAllowed ifPlayer {
-        require(player2 != address(0), "Game has not started.");
+        require(player2 != address(0), ", game has not started.");
         
         if(block.timestamp >= timeout && msg.sender == opponent(currentPlayer)){
             winner = opponent(currentPlayer);
@@ -114,9 +116,9 @@ contract Battleship is StateMachine {
         if(msg.sender == winner)
         {
             winner.transfer(address(this).balance);
-            emit BetClaimed(msg.sender, betAmt * 2);
+            emit BetClaimed(msg.sender, betAmt * 2,  block.timestamp);
         } else {
-            revert("You are a loser :( ");
+            revert("... You are a loser :( ");
         }
     }
 
@@ -126,16 +128,18 @@ contract Battleship is StateMachine {
     /// @param _playerB Player 2 address.
     /// @param _topic Whisper-channel topic.
     function joinGame(address _playerA, address _playerB, string _topic) public payable checkAllowed {
-        require(gameReg != address(0), "Game registry not set.");
-        require(_playerA != owner && _playerB != owner, "The Factory cannot play.");
-        require(msg.value >= betAmt,"Invalid bet amount.");
+        require(gameReg != address(0), ", game registry not set.");
+        require(_playerA != owner && _playerB != owner, ", factory contract cannot play.");
+        require(msg.value >= betAmt,", invalid bet amount.");
         
         // The Factory is the contract owner and cannot register as player.
         if( _playerA != address(0) && player1 == address(0) && msg.sender == owner){
             player1 = _playerA;
             topic = _topic;
             betAmt = msg.value;
-            require(gameReg.call(bytes4(keccak256("setGameOwner()")))); //Set the contract address as game owner.
+
+             //Set the contract address as game owner.
+            require(gameReg.call(bytes4(keccak256("setGameOwner()"))));
             require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player1,msg.value,1)));
             emit JoinedGame(player1, "Player1");
         }
@@ -152,13 +156,13 @@ contract Battleship is StateMachine {
 
         // Join as player 2 if not set in parameter, place the correct bet.
         if(player2 == address(0) && msg.sender != player1 && msg.sender != owner){
-            require(msg.value == betAmt, "Wrong bet amount.");
+            require(msg.value == betAmt, ", player2 incorrect bet amount.");
             player2 = msg.sender;
         }
 
         // Player 2 was passed as parameter without bet.
         if(msg.sender == player2){
-            require(msg.value == betAmt, "Wrong bet amount.");
+            require(msg.value == betAmt, ", player2 incorrect bet amount.");
             currentPlayer = player2;
             require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
             emit JoinedGame(msg.sender, "Player2");   
@@ -166,7 +170,7 @@ contract Battleship is StateMachine {
 
         // If not a VIP identity, get out.
         if( !(msg.sender == owner || msg.sender == player1 || msg.sender == player2)){
-            revert("Invalid Player");
+            revert(", not a VIP idenity.");
         } 
     }
 
@@ -179,8 +183,9 @@ contract Battleship is StateMachine {
         
         //Get signer delegate from board signature.
         address signer = UtilsLib.recoverSigner(_boardHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
-        
-        //isValidDelegate(msg.sender, UtilsLib.stringToBytes32('Secp256k1VerificationKey2018'), signer);
+
+        //Validate signer delegate from Ethr registry.
+        //isValidDelegate(msg.sender, UtilsLib.stringToBytes32('Secp256k1VerificationKey2018'), signer); 
         isValidDelegate(msg.sender, hex"766572694b657900000000000000000000000000000000000000000000000000", signer);
         hiddenBoards[msg.sender] = _boardHash;
     }
@@ -189,9 +194,9 @@ contract Battleship is StateMachine {
     /// @param _xy Coordinates in the X and Y planes.
     /// @param _nonce Game moves sequence nonce.
     function move(uint8 _xy, uint8 _nonce) public checkAllowed ifPlayer {
-        require(_xy >= 0 && _xy <= 99,"Out of range.");
-        require(nonce >= 0 && nonce <= 200, "Incorrect sequence number.");
-        require(_nonce == nonce && _nonce >= 0, "Incorrect sequence number.");
+        require(_xy >= 0 && _xy <= 99,", out of range shot.");
+        require(nonce >= 0 && nonce <= 200, ", incorrect sequence number.");
+        require(_nonce == nonce && _nonce >= 0, ", incorrect sequence number.");
         
         playerMoves[msg.sender].push(_xy);
         currentPlayer = opponent(msg.sender);
@@ -209,17 +214,52 @@ contract Battleship is StateMachine {
     /// @dev Reveal board.
     /// @param _board The player's board.
     /// @param _sig Message signature to get signer.
-    function revealBoard(uint8[] _board, bytes _sig, bytes4 _secret) public checkAllowed ifPlayer {
+    function revealBoard(uint8[] memory _board, bytes _sig, bytes4 _secret, uint8[] memory _board2) public checkAllowed ifPlayer {
         require(_sig.length == 65 && _secret != bytes4(0));
         require(hiddenBoards[msg.sender] != bytes32(0) && playerSigner[msg.sender] != address(0));
-        
-        bytes32 hash = keccak256(abi.encodePacked(_board, _secret, address(this)));
-        address signer = UtilsLib.recoverSigner(hash, _sig); //Get signer delegate from board signature.
-        require(signer == playerSigner[msg.sender], "Invalid signer.");
+        require(hiddenBoards[opponent(msg.sender)] != bytes32(0) && playerSigner[opponent(msg.sender)] != address(0));
 
-        for(uint8 i = 0; i < 100; i++){
+        uint8 i;
+        address playerSender = UtilsLib.toAddress(keccak256(abi.encodePacked(msg.sender)),0);
+        // clean board, hit:3 miss:2 ship:1
+        for(i = 0; i < 100; i++){
+            if(_board[i] == 1 || _board[i] == 3){
+                playerBoard[playerSender].push(uint8(1));
+                if(_board[i] == 3){
+                    hitsToPlayer[msg.sender] += 1;
+                }
+            }
+            else{
+                playerBoard[playerSender].push(uint8(0));
+            }
+        }
+
+        //Hash inputs to recreat hidden board.
+        bytes32 hash = keccak256(abi.encodePacked(playerBoard[playerSender], _secret, address(this)));
+        require(hash == hiddenBoards[msg.sender], ", invalid own board.");
+        //Get signer delegate from board signature. Should match with the initial hiddeen board.
+        address signer = UtilsLib.recoverSigner(hash, _sig); 
+        require(signer == playerSigner[msg.sender], ", invalid signer.");
+
+        for(i = 0; i < 100; i++){
             playerBoard[msg.sender].push(_board[i]);
         }
+
+
+        address playerOpponent = UtilsLib.toAddress(keccak256(abi.encodePacked(opponent(msg.sender))),0);
+        // clean board2, hit:3 miss:2 ship:1
+        for(i = 0; i < 100; i++){
+            if(_board2[i] == 1 || _board[i] == 3){
+                playerBoard[playerOpponent].push(uint8(1));
+                if(_board2[i] == 3){
+                    hitsAgainstPlayer[playerOpponent] += 1; 
+                }
+            }
+            else{
+                playerBoard[playerOpponent].push(uint8(0));
+            }
+        }
+        
         emit RevealedBoard(msg.sender, block.timestamp);
     }
     
@@ -240,9 +280,9 @@ contract Battleship is StateMachine {
 
     /// @dev Start timeout in case of game halt.
     function startTimeout() public  checkAllowed ifPlayer {
-        require(currentPlayer == opponent(msg.sender),"Cannot start timeout.");
+        require(currentPlayer == opponent(msg.sender),", cannot start timeout.");
         timeout = block.timestamp + timeoutInterval;
-        emit TimeoutStarted();
+        emit TimeoutStarted(block.timestamp);
     }
 
     /// @dev Allow functions in the given state. From StateMachine@TokenFoundry.
@@ -331,13 +371,13 @@ contract Battleship is StateMachine {
     /// @param _player The address of the selected player to find out who the opponent is.
     /// @return Address of the opponent player.
     function opponent(address _player) internal view returns (address) {
-        require(player2 != address(0), "Game has not started.");
+        require(player2 != address(0), ", game has not started.");
         if (_player == player1) {
             return player2;
         } else if (_player == player2) {
             return player1;
         } else {
-            revert("Invalid player.");
+            revert(", invalid opponent player.");
         }
     }
 
@@ -347,14 +387,14 @@ contract Battleship is StateMachine {
     /// @param _delegateType Type of delegate. Signer -> bytes32 of Secp256k1VerificationKey2018.
     /// @param _delegate The address of the signer delegate.
     function isValidDelegate(address _identity, bytes32 _delegateType, address _delegate) internal ifPlayer{
-        require(ethrReg != address(0), "Ethr registry not set.");
-        require(_identity != address(0) && _delegateType != bytes32(0) && _delegate != address(0),"Invalid input.");
+        require(ethrReg != address(0), ", ethr registry not set.");
+        require(_identity != address(0) && _delegateType != bytes32(0) && _delegate != address(0),", invalid delegate input.");
         bool result;
         bytes4 sig = bytes4(keccak256("validDelegate(address,bytes32,address)"));
         assembly {
             // Move pointer to free memory spot.
             let ptr := mload(0x40)
-            // Put function sig at memory spot.
+            // Put function signature at memory spot.
             mstore(ptr,sig)
             // Append arguments after function signature.
             mstore(add(ptr,0x04), _identity)
@@ -378,7 +418,7 @@ contract Battleship is StateMachine {
             playerSigner[_identity] = _delegate;
             emit ValidSigner(_identity, _delegate, result);
         } else {
-            revert("Invalid signer.");
+            revert(", not valid ethr signer delegate.");
         }
 	}
     /* fallback */

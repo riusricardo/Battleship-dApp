@@ -11,6 +11,17 @@ library UtilsLib {
         }
     }
 
+    function toAddress(bytes _bytes, uint _start) internal  pure returns (address) {
+        require(_bytes.length >= (_start + 20));
+        address tempAddress;
+
+        assembly {
+            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
+        }
+
+        return tempAddress;
+    }
+
     function splitSignature(bytes _sig) internal pure returns (uint8, bytes32, bytes32){
         require(_sig.length == 65);
 
