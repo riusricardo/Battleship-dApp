@@ -1,8 +1,6 @@
 import Web3 from 'web3'
 import HttpProvider from 'ethjs-provider-http'
 
-const providerFallback = new HttpProvider('http://localhost:8547');
-const web3Fallback = new Web3(providerFallback);
 
 let getWeb3 = new Promise(function(resolve, reject) {
   // Wait for loading completion to avoid race conditions with web3 injection timing.
@@ -14,6 +12,9 @@ let getWeb3 = new Promise(function(resolve, reject) {
     if (typeof web3 !== 'undefined') {
       // Use Mist/MetaMask's provider.
       web3 = new Web3(web3.currentProvider)
+
+      const providerFallback = new Web3.providers.HttpProvider('http://localhost:8547');
+      const web3Fallback = new Web3(providerFallback);
 
       results = {
         web3Instance: web3,
@@ -28,16 +29,16 @@ let getWeb3 = new Promise(function(resolve, reject) {
     } else {
       // Fallback to localhost if no web3 injection. We've configured this to
       // use the development console's port by default.
-      let provider = new HttpProvider('http://localhost:8545');
       //var provider = new Web3.providers.HttpProvider('http://localhost:8545')
-
+      
+      let provider = new HttpProvider('http://localhost:8545');
       web3 = new Web3(provider)
 
       results = {
         web3Instance: web3,
         web3Provider: provider,
-        web3Fallback,
-        providerFallback,
+        web3Fallback: web3,
+        providerFallback: provider
       }
 
       console.log('No web3 instance injected, using Local web3.');

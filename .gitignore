@@ -2,6 +2,8 @@
 #key.json
 build/
 chaindata/
+
+*.lock
 *LOCK
 *nodekey
 *transactions.rlp
