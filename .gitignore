@@ -1,12 +1,7 @@
 # seed
-#key.json
+# key.json
 build/
-chaindata/
-
-*.lock
-*LOCK
-*nodekey
-*transactions.rlp
+.dev/datadir/geth
 
 # Logs
 logs
@@ -69,3 +64,4 @@ typings/
 
 # next.js build output
 .next
+

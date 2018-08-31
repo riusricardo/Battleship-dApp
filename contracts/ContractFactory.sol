@@ -32,7 +32,7 @@ contract ContractFactory {
         if(msg.sender == owner) {
             _;
         } else {
-            revert("Not owner");
+            revert(", not owner.");
         }
     }
 
@@ -40,23 +40,23 @@ contract ContractFactory {
         if(!locked){
             _;
         } else{
-            revert("Contract Locked");
+            revert(", contract locked.");
         }
     }
 
     modifier lockAfter(uint _time) {
-        require(block.timestamp < (creationTime + _time),"The function is locked by time.");
+        require(block.timestamp < (creationTime + _time),", the function is locked by time.");
         _;
     }
     
     function concatBytecode(bytes _data) external ifOwner lockAfter(3 weeks) ifNotLocked{
         bytecode = Bytes.concat(bytecode, _data);
-        emit BytecodeChanged(owner, "The owner updated the code.");
+        emit BytecodeChanged(owner, ", the owner updated the code.");
     }
     
     function setBytecode(bytes _data) external ifOwner lockAfter(3 weeks) ifNotLocked{
         bytecode = _data;
-        emit BytecodeChanged(owner, "The owner updated the code.");
+        emit BytecodeChanged(owner, ", the owner updated the code.");
     }
     
     function getBytecode() external view ifOwner returns(bytes){
@@ -65,7 +65,7 @@ contract ContractFactory {
 
     function lockFabric() external ifOwner ifNotLocked{
         locked = true;
-        emit FabricLocked(owner, "The fabric bytecode became not upgradable.");
+        emit FabricLocked(owner, ", the fabric bytecode became not upgradable.");
     }
 
     function createAndCall(address _actor, address _actor2, bytes _data) external payable {
@@ -73,7 +73,7 @@ contract ContractFactory {
         require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address,address)")), abi.encode(deployed,_actor,_actor2)));
         require(deployed.call(bytes4(keccak256("setEthReg(address)")), abi.encode(ethReg)));
         require(deployed.call(bytes4(keccak256("setGameReg(address)")), abi.encode(gameReg)));
-        require(deployed.call.value(msg.value)(_data),"Failed to send data.");
+        require(deployed.call.value(msg.value)(_data),", failed to send _data.");
         emit ContractDeployed(_actor, deployed);
     }
 

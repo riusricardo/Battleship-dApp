@@ -79,7 +79,7 @@ contract('ContractFactory', function(accounts) {
       try {
           await instance.setBytecode(code, {from: owner})
         } catch (error) {
-          assert.equal(error.message, 'VM Exception while processing transaction: revert Contract Locked')
+          assert.equal(error.message, 'VM Exception while processing transaction: revert , contract locked.')
 
         }
       })

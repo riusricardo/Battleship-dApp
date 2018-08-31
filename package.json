@@ -39,7 +39,7 @@
     "jest": "17.0.2",
     "json-loader": "0.5.4",
     "object-assign": "4.1.0",
-    "openzeppelin-solidity": "^1.9.0",
+    "openzeppelin-solidity": "^1.12.0",
     "path-exists": "2.1.0",
     "postcss-loader": "1.0.0",
     "promise": "7.1.1",
@@ -88,7 +88,7 @@
     "redux-thunk": "^2.2.0",
     "typeface-roboto": "0.0.54",
     "uport-connect": "0.7.5",
-    "web3": "^1.0.0-beta.34"
+    "web3": "1.0.0-beta.34"
   },
   "scripts": {
     "start": "node scripts/start.js",
@@ -100,12 +100,10 @@
     "geth-dev:remove": "yes | geth removedb --datadir=.dev/datadir",
     "geth-dev:chain": "geth --networkid=1337 --datadir=.dev/datadir --unlock 0b774fa1bcdcefb52b490f6879be8f8da0dbd954,417ed433e325a5e9d1f76396af5a4268b92a6bf1,47837f58b407550a4dfe4308f5e52c4d8f8f748e,c7dfca9d08ea64d4c40afc7c872ac268d68e8780,82294465b79cda4f493d7adccb504fce327d823d,2a61115c69a083d34f9da75f498e4733401bf280 --password config/dev_pass.txt --cache=1024 --cache.database=75 --port=30303 --rpc --rpcport=8545 --rpcaddr=localhost  --rpccorsdomain=\"*\" --nodiscover --maxpeers=0 --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --mine --minerthreads=1 --etherbase=0x0b774fa1bcdcefb52b490f6879be8f8da0dbd954 --shh --rpcapi=eth,web3,net,debug,shh,personal --wsapi=eth,web3,net,shh,debug,personal --targetgaslimit=800000000 --gasprice=1000000000 --dev --dev.period=1",
     "geth-dev:supply": "geth --exec 'loadScript(\"scripts/createbalances.js\")' attach .dev/datadir/geth.ipc",
-    "geth-dev": "yarn geth-dev:delete && (sleep 10s; yarn geth-dev:supply) & yarn geth-dev:chain",
+    "geth-dev": "npm run geth-dev:delete && (sleep 10s; npm run geth-dev:supply) & npm run geth-dev:chain",
     "geth-dev:init": "geth --datadir=.dev/datadir init .dev/datadir/gethGenesisBlock.json",
     "geth-dev:priv-chain": " geth --networkid=1337 --datadir=.dev/datadir --unlock 0b774fa1bcdcefb52b490f6879be8f8da0dbd954,417ed433e325a5e9d1f76396af5a4268b92a6bf1,47837f58b407550a4dfe4308f5e52c4d8f8f748e,c7dfca9d08ea64d4c40afc7c872ac268d68e8780,82294465b79cda4f493d7adccb504fce327d823d,2a61115c69a083d34f9da75f498e4733401bf280 --password config/dev_pass.txt --cache=1024 --cache.database=75 --port=30303 --rpc --rpcport=8545 --rpcaddr=localhost  --rpccorsdomain=\"*\" --nodiscover --maxpeers=0 --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --mine --minerthreads=1 --etherbase=0x0b774fa1bcdcefb52b490f6879be8f8da0dbd954  --shh --rpcapi=eth,web3,net,debug,shh,personal --wsapi=eth,web3,net,shh,debug,personal --gpopercentile=60 --gpoblocks=20 --targetgaslimit=800000000 --gasprice=1000000000 --ethash.dagdir=.dev/datadir/geth/ --ethash.cachedir=.dev/datadir/geth/ --ethash.dagsinmem=1 --ethash.dagsondisk=1",
-    "geth-priv": "yarn geth-dev:remove &&  yarn run geth-dev:init && yarn geth-dev:priv-chain"
-
-
+    "geth-priv": "npm run geth-dev:remove &&  npm run geth-dev:init && npm run geth-dev:priv-chain"
   },
   "jest": {
     "collectCoverageFrom": [

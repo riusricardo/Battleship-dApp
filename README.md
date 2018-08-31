@@ -9,42 +9,57 @@ You can play against anyone in the other side of the world and even bet on the f
 ## Installation
 
 ### Requirements
-* Linux
-* Geth 1.8 and up
-* Truffle Framework
-* Yarn
-* Ganache-cli
-* uPort App
+* Unix system
+* [Geth 1.8+](https://github.com/ethereum/go-ethereum/releases)
+* [NodeJS/LTS](https://nodejs.org/en/download/package-manager/)
+* [Truffle Framework](https://truffleframework.com/truffle)
+* [Ganache-cli](https://github.com/trufflesuite/ganache-cli)
+* [uPort App](https://www.uport.me/)
+
 
 ```
-$ (Terminal 1)yarn install
-$ (Terminal 1)truffle compile
+(Terminal 1)$ npm install
+(Terminal 1)$ truffle compile
 ```
 
 ## Usage
 
 ```
-$ (Terminal 2)yarn run ganache-dev
-$ (Terminal 1)truffle migrate --network ganache_dev
-$ (Terminal 3)yarn geth-dev:whisper
-$ (Terminal 1)yarn start
+(Terminal 2)$ npm run ganache-dev
+(Terminal 1)$ truffle migrate --network ganache_dev
+(Terminal 3)$ npm run geth-dev:whisper
+(Terminal 1)$ npm start
 ```
-Login with your mobile uPort App.
+Login with your mobile uPort App. (disabled in develop branch)
 
+### Ports
+Ganache: rcp and ws -> 8545
+Geth: rcp -> 8545 and ws -> 8546
+
+
+## Tests
+
+`$ truffle test --network ganache`
+
+### Accounts
+
+Import into MetaMask using seed or private keys.
+
+Seed: "coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz"
 
 ```
 Available Accounts
 ==================
-(0) 0xf18f16eebae0912a17885d743754c943b548a630 (~100 ETH)
-(1) 0x04c4b39e60ab3655af44cb928ac0da196188dd65 (~100 ETH)
-(2) 0x2eb6b952af9ef44f376e799ca44a76a28d3e8957 (~100 ETH)
-(3) 0xd84d3cd384604375a115d697e838b5b4ed681c9d (~100 ETH)
-(4) 0x1435b9664159cc908d67c46b2f92ecb414ec8190 (~100 ETH)
-(5) 0x5fc5cea687718fbdb529f19a2fffb621aa828405 (~100 ETH)
-(6) 0x8d36227d3549846490fdf61e51a07ce5c84cfd56 (~100 ETH)
-(7) 0xcf2069750e3ce70f971f7f0af9538af7fd773e47 (~100 ETH)
-(8) 0xeee054834b10c5c76e2e25c8b00b0499f2916df2 (~100 ETH)
-(9) 0x46bbce669bd8b37660695d4f863da4665079c596 (~100 ETH)
+(0) 0xf18f16eebae0912a17885d743754c943b548a630
+(1) 0x04c4b39e60ab3655af44cb928ac0da196188dd65
+(2) 0x2eb6b952af9ef44f376e799ca44a76a28d3e8957
+(3) 0xd84d3cd384604375a115d697e838b5b4ed681c9d
+(4) 0x1435b9664159cc908d67c46b2f92ecb414ec8190
+(5) 0x5fc5cea687718fbdb529f19a2fffb621aa828405
+(6) 0x8d36227d3549846490fdf61e51a07ce5c84cfd56
+(7) 0xcf2069750e3ce70f971f7f0af9538af7fd773e47
+(8) 0xeee054834b10c5c76e2e25c8b00b0499f2916df2
+(9) 0x46bbce669bd8b37660695d4f863da4665079c596
 
 Private Keys
 ==================
@@ -59,11 +74,6 @@ Private Keys
 (8) 0xb0039d4fd4eeb659bcc8315a06953ec9843387deb7164b7bc652d493db941fdd
 (9) 0x18c5172e35128682db94f7fb64d6031269c10bbf943a1ee80f7f4b9d5b8dc3b9
 ```
-
-
-## Tests
-
-`$ truffle test --network ganache`
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
