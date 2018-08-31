@@ -47,7 +47,7 @@ contract('GameRegistry', function(accounts) {
             const tx = await gameReg.setFactoryGame(gameAddress1, player1, player2, {from: badboy})
             assert.equal(tx, undefined, 'this should not happen')
           } catch (error) {
-            assert.equal(error.message, 'VM Exception while processing transaction: revert Not factory')
+            assert.equal(error.message, 'VM Exception while processing transaction: revert , not factory.')
           }
         })
     })

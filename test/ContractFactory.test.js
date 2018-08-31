@@ -30,7 +30,6 @@ contract('ContractFactory', function(accounts) {
 		}
       bytecode = await Battleship.bytecode
       factory = await ContractFactory.address
-	console.log(joinBattle)
     })
 
     describe('set bytecode into factory', () => {
@@ -79,7 +78,7 @@ contract('ContractFactory', function(accounts) {
       try {
           await instance.setBytecode(code, {from: owner})
         } catch (error) {
-          assert.equal(error.message, 'VM Exception while processing transaction: revert Contract Locked')
+          assert.equal(error.message, 'VM Exception while processing transaction: revert , contract locked.')
 
         }
       })
