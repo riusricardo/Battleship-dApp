@@ -34,6 +34,6 @@ export function loginUser() {
       }
     */
       return browserHistory.push('/create')
-    })
+    //})
   }
 }

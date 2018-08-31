@@ -94,7 +94,7 @@
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",
-    "ganache-dev": "ganache-cli -b=3 -a=10 -p=8546 -i=1335 -l=10000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
+    "ganache-dev": "ganache-cli -b=3 -a=10 -p=8546 -i=1335 -l=8000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
     "geth-dev:whisper": "geth --networkid=1335 --datadir=.dev/rinkeby --shh --rpc --rpcport=8547 --rpcaddr=localhost  --rpccorsdomain=\"*\" --rpcapi=eth,web3,net,shh,debug,personal --nodiscover --maxpeers=0 --dev",
     "geth-dev:delete": "rm -fR .dev/datadir/geth/",
     "geth-dev:remove": "yes | geth removedb --datadir=.dev/datadir",

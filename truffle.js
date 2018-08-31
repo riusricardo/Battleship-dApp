@@ -23,27 +23,27 @@ function getProvider(rpcUrl) {
 module.exports = {
   solc: {
     optimizer: {
-      enabled: false,
-      runs: 200
+      enabled: true,
+      runs: 150
     }
   },
   networks: {
     ganache: {
       get provider() {
         if (!provider) {
-          provider = ganacheRPC.provider({total_accounts: 10, network_id: 35, gasLimit:10000000, gasPrice: 1000000000})
+          provider = ganacheRPC.provider({total_accounts: 10, network_id: 35, gasLimit:8000000, gasPrice: 1000000000})
         }
         return provider
       },
       network_id: 35,
-      gas: 10000000,
+      gas: 8000000,
       gasPrice: 1000000000
     },
     ganache_dev: {
       host: "localhost",
       network_id: 1335,
       port: 8546,
-      gas: 10000000,
+      gas: 8000000,
       gasPrice: 1000000000
     },
     geth_dev: { 
