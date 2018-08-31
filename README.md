@@ -1,4 +1,6 @@
-### :warning: This project will continue its development on the develop branch. :warning:
+### :warning: You are in the develop branch. :warning:
+This branch will continuously receive updates.
+The master branch is paused due to the developer program.
 
 # Battleship-dApp ![CI status](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
