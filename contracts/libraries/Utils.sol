@@ -1,6 +1,6 @@
 pragma solidity 0.4.24;
 
-library UtilsLib {
+library Utils {
 
     function stringToBytes32(string memory _string) internal pure returns (bytes32 result) {
         bytes memory temp = bytes(_string);
