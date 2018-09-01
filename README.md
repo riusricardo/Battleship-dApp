@@ -1,4 +1,6 @@
 ### :warning: You are in the develop branch. :warning:
+uPort login has been disabled in this branch to accelerate development.
+
 The master branch is paused due to the developer program.
 
 # Battleship-dApp ![CI status](https://img.shields.io/badge/build-passing-brightgreen.svg)
@@ -10,7 +12,7 @@ You can play against anyone in the other side of the world and even bet on the f
 ## Installation
 
 ### Requirements
-* Linux
+* Unix system
 * Geth 1.8 and up
 * Truffle Framework
 * Yarn
@@ -30,7 +32,7 @@ $ (Terminal 1)truffle migrate --network ganache_dev
 $ (Terminal 3)yarn geth-dev:whisper
 $ (Terminal 1)yarn start
 ```
-Login with your mobile uPort App.
+Login with your mobile uPort App. (disabled in develop branch)
 
 
 ```
