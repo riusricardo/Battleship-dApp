@@ -13,27 +13,39 @@ You can play against anyone in the other side of the world and even bet on the f
 
 ### Requirements
 * Unix system
-* Geth 1.8 and up
-* Truffle Framework
-* Yarn
-* Ganache-cli
-* uPort App
+* [Geth 1.8+](https://github.com/ethereum/go-ethereum/releases)
+* [NodeJS](https://nodejs.org/en/download/package-manager/)
+* [Yarn](https://yarnpkg.com/lang/en/docs/install/)
+* [Truffle Framework](https://truffleframework.com/truffle)
+* [Ganache-cli](https://github.com/trufflesuite/ganache-cli)
+* [uPort App](https://www.uport.me/)
+
 
 ```
-$ (Terminal 1)yarn install
-$ (Terminal 1)truffle compile
+(Terminal 1)$ yarn install
+(Terminal 1)$ truffle compile
 ```
 
 ## Usage
 
 ```
-$ (Terminal 2)yarn run ganache-dev
-$ (Terminal 1)truffle migrate --network ganache_dev
-$ (Terminal 3)yarn geth-dev:whisper
-$ (Terminal 1)yarn start
+(Terminal 2)$ yarn ganache-dev
+(Terminal 1)$ truffle migrate --network ganache_dev
+(Terminal 3)$ yarn geth-dev:whisper
+(Terminal 1)$ yarn start
 ```
 Login with your mobile uPort App. (disabled in develop branch)
 
+
+## Tests
+
+`$ truffle test --network ganache`
+
+### Accounts
+
+Import into MetaMask using seed or private keys.
+
+Seed: "coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz"
 
 ```
 Available Accounts
@@ -62,11 +74,6 @@ Private Keys
 (8) 0xb0039d4fd4eeb659bcc8315a06953ec9843387deb7164b7bc652d493db941fdd
 (9) 0x18c5172e35128682db94f7fb64d6031269c10bbf943a1ee80f7f4b9d5b8dc3b9
 ```
-
-
-## Tests
-
-`$ truffle test --network ganache`
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

@@ -1,8 +1,7 @@
 # seed
 #key.json
 build/
-.dev/chaindata/geth/
-.dev/rinkeby/
+.dev/datadir/geth
 
 *.lock
 *LOCK
