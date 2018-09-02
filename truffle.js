@@ -42,7 +42,7 @@ module.exports = {
     ganache_dev: {
       host: "localhost",
       network_id: 1335,
-      port: 8546,
+      port: 8545,
       gas: 8000000,
       gasPrice: 1000000000
     },
@@ -50,7 +50,7 @@ module.exports = {
       host: "localhost",
       network_id: 1337,
       port: 8545,
-      gas: 6283185, //geth --dev gas limit is 6283185
+      gas: 6283185, //geth --dev gas limit.
       gasPrice: 1000000000
     },
     geth_priv: {

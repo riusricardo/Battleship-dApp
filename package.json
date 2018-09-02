@@ -88,14 +88,14 @@
     "redux-thunk": "^2.2.0",
     "typeface-roboto": "0.0.54",
     "uport-connect": "0.7.5",
-    "web3": "^1.0.0-beta.34"
+    "web3": "^1.0.0-beta.36"
   },
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",
-    "ganache-dev": "ganache-cli  -a=10 -p=8546 -i=1335 -l=8000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
-    "geth-dev:whisper": "geth --networkid=1335 --datadir=.dev/datadir --shh --rpc --rpcport=8547 --rpcaddr=localhost  --rpccorsdomain=\"*\" --rpcapi=eth,web3,net,shh,debug,personal --nodiscover --maxpeers=0 --dev",
+    "ganache-dev": "ganache-cli  -a=10 -p=8545 -i=1335 -l=8000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
+    "geth-dev:whisper": "yarn geth-dev:delete && geth --networkid=1337 --datadir=.dev/datadir --shh --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --wsapi=eth,web3,net,shh,debug,personal --nodiscover --maxpeers=0 --dev",
     "geth-dev:delete": "rm -fR .dev/datadir/geth/",
     "geth-dev:remove": "yes | geth removedb --datadir=.dev/datadir",
     "geth-dev:chain": "geth --networkid=1337 --datadir=.dev/datadir --unlock f18f16eebae0912a17885d743754c943b548a630,04c4b39e60ab3655af44cb928ac0da196188dd65,2eb6b952af9ef44f376e799ca44a76a28d3e8957,d84d3cd384604375a115d697e838b5b4ed681c9d,1435b9664159cc908d67c46b2f92ecb414ec8190,5fc5cea687718fbdb529f19a2fffb621aa828405,8d36227d3549846490fdf61e51a07ce5c84cfd56,cf2069750e3ce70f971f7f0af9538af7fd773e47,eee054834b10c5c76e2e25c8b00b0499f2916df2,46bbce669bd8b37660695d4f863da4665079c596 --password config/dev_pass.txt --cache=1024 --cache.database=75 --port=30303 --rpc --rpcport=8545 --rpcaddr=localhost  --rpccorsdomain=\"*\" --nodiscover --maxpeers=0 --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --mine --minerthreads=1 --shh --rpcapi=eth,web3,net,debug,shh,personal --wsapi=eth,web3,net,shh,debug,personal --targetgaslimit=800000000 --gasprice=1000000000 --dev --dev.period=1",
