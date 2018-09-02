@@ -50,7 +50,7 @@ module.exports = {
       host: "localhost",
       network_id: 1337,
       port: 8545,
-      gas: 6283185, //geth --dev gas limit.
+      gas: 6283185, //geth --dev initial gas limit.
       gasPrice: 1000000000
     },
     geth_priv: {

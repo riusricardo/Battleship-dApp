@@ -29,7 +29,6 @@ contract('ContractFactory', function(accounts) {
 		  }
 		}
       bytecode = await Battleship.bytecode
-      factory = await ContractFactory.address
     })
 
     describe('set bytecode into factory', () => {

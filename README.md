@@ -36,6 +36,10 @@ You can play against anyone in the other side of the world and even bet on the f
 ```
 Login with your mobile uPort App. (disabled in develop branch)
 
+### Ports
+Ganache: rcp and ws -> 8545
+Geth: rcp -> 8545 and ws -> 8546
+
 
 ## Tests
 
@@ -50,16 +54,16 @@ Seed: "coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz"
 ```
 Available Accounts
 ==================
-(0) 0xf18f16eebae0912a17885d743754c943b548a630 (~100 ETH)
-(1) 0x04c4b39e60ab3655af44cb928ac0da196188dd65 (~100 ETH)
-(2) 0x2eb6b952af9ef44f376e799ca44a76a28d3e8957 (~100 ETH)
-(3) 0xd84d3cd384604375a115d697e838b5b4ed681c9d (~100 ETH)
-(4) 0x1435b9664159cc908d67c46b2f92ecb414ec8190 (~100 ETH)
-(5) 0x5fc5cea687718fbdb529f19a2fffb621aa828405 (~100 ETH)
-(6) 0x8d36227d3549846490fdf61e51a07ce5c84cfd56 (~100 ETH)
-(7) 0xcf2069750e3ce70f971f7f0af9538af7fd773e47 (~100 ETH)
-(8) 0xeee054834b10c5c76e2e25c8b00b0499f2916df2 (~100 ETH)
-(9) 0x46bbce669bd8b37660695d4f863da4665079c596 (~100 ETH)
+(0) 0xf18f16eebae0912a17885d743754c943b548a630
+(1) 0x04c4b39e60ab3655af44cb928ac0da196188dd65
+(2) 0x2eb6b952af9ef44f376e799ca44a76a28d3e8957
+(3) 0xd84d3cd384604375a115d697e838b5b4ed681c9d
+(4) 0x1435b9664159cc908d67c46b2f92ecb414ec8190
+(5) 0x5fc5cea687718fbdb529f19a2fffb621aa828405
+(6) 0x8d36227d3549846490fdf61e51a07ce5c84cfd56
+(7) 0xcf2069750e3ce70f971f7f0af9538af7fd773e47
+(8) 0xeee054834b10c5c76e2e25c8b00b0499f2916df2
+(9) 0x46bbce669bd8b37660695d4f863da4665079c596
 
 Private Keys
 ==================
