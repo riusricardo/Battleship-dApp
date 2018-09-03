@@ -1,4 +1,3 @@
-
 var GameRegistry = artifacts.require("GameRegistry");
 
 contract('GameRegistry', function(accounts) {
@@ -68,7 +67,7 @@ contract('GameRegistry', function(accounts) {
           try {
             await gameReg.setGameOwner({from: gameAddress1})
           } catch (error) {
-            assert.equal(error.message, 'VM Exception while processing transaction: revert Game not created by the factory.')
+            assert.equal(error.message, 'VM Exception while processing transaction: revert , game not created by the factory.')
           }
         })
     })

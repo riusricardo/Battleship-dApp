@@ -4,14 +4,8 @@ import ContractFactory from './../build/contracts/ContractFactory.json'
 import GameRegistry from './../build/contracts/GameRegistry.json'
 import EthereumDIDRegistry from './../build/contracts/EthereumDIDRegistry.json'
 
-// Select websocket port; ganache-dev:'8545' or geth-dev:'8546'.
-const provider = new Web3.providers.WebsocketProvider('ws://localhost:8545')
-const web30 = new Web3(provider)
-
 let drizzleOptions = {
-  syncAlways:{},
   web3: {
-    block: false,
     fallback: {
       //type: 'ws',
       //url: 'ws://localhost:8545'
@@ -25,19 +19,23 @@ let drizzleOptions = {
   ],
   events: {
     GameRegistry: ['GameOwnerSet','PlayerSet','WinnerSet','PlayerBoardSet'],
-    ContractFactory: ['ContractDeployed'],
-    EthereumDIDRegistry: []
+    ContractFactory: ['ContractDeployed']
   },
   polls: {
-    accounts: 1500
-  }
+    blocks: 3000,
+    accounts: 3000
+  },
+  syncAlways: true
 }
 
+// Add websocket port; ganache-dev:'8545' or geth-dev:'8546'.
+const provider = new Web3.providers.WebsocketProvider('ws://localhost:8545')
+const web3Instance = new Web3(provider)
 
-web30.eth.net.isListening()
+web3Instance.eth.net.isListening()
 .then(() => { 
   // Ganache enables RCP and WS connections on the same port.
-  web30.currentProvider.connection.close()
+  web3Instance.currentProvider.connection.close()
   drizzleOptions.web3.fallback.type = 'ws'
   drizzleOptions.web3.fallback.url = 'ws://localhost:8545'
 })
@@ -45,7 +43,7 @@ web30.eth.net.isListening()
   (err) => { 
     //Geth ports RCP -> 8545 and WS -> 8546.
     console.log('%c IGNORE PREVIOUS ERROR MESSAGE: Error during WebSocket... , just testing for ganache on 8545.', 'background: #222; color: #bada55')
-    web30.currentProvider.connection.close()
+    web3Instance.currentProvider.connection.close()
     drizzleOptions.web3.fallback.type = 'ws'
     drizzleOptions.web3.fallback.url = 'ws://localhost:8546'
   });
