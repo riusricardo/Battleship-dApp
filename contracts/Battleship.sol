@@ -181,7 +181,7 @@ contract Battleship is StateMachine {
         //Get signer delegate from board signature.
         address signer = Utils.recoverSigner(_boardHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
 
-        //Validate signer delegate from Ethr registry. Secp256k1VerificationKey2018
+        //Validate signer delegate from Ethr registry. Secp256k1VerificationKey2018 -> "veriKey"
         isValidDelegate(msg.sender, Utils.stringToBytes32("veriKey"), signer); 
         hiddenBoard[msg.sender] = _boardHash;
     }

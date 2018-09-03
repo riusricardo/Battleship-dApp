@@ -304,6 +304,8 @@ class Channel {
         const owner = await self.ethrDid.lookupOwner();
         const name = "chPubKey#" + self.topic + id.delegateNum;
         self.registry.revokeAttribute(self.identity, stringToBytes32(name) , id.pubKey, {from: owner});
+
+        //self.ethrDid.revokeAttribute(name, id.pubKey);
         
         self.identity = null; 
         self.identity2 =  null;
