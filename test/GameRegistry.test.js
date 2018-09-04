@@ -13,14 +13,14 @@ contract('GameRegistry', function(accounts) {
         gameReg = await GameRegistry.deployed()
     })
 
-    describe('get owner', () => {
+    describe('Get owner', () => {
         it('should return the contract owner', async () => {
         const _owner = await gameReg.owner()
         assert.equal(owner, _owner)
         })
     })
 
-    describe('set factory address', () => {
+    describe('Set factory address', () => {
         before(async () => {
           await gameReg.setFactory(factory, {from: owner})
         })
@@ -30,7 +30,7 @@ contract('GameRegistry', function(accounts) {
         })
     })
 
-    describe('set a new game from factory', () => {
+    describe('Set a new game from factory', () => {
         before(async () => {
           await gameReg.setFactoryGame(gameAddress1, player1, player2, {from: factory})
         })
@@ -40,7 +40,7 @@ contract('GameRegistry', function(accounts) {
         })
     })
 
-    describe('set a new game not from factory', () => {
+    describe('Set a new game not from factory', () => {
         it('should fail', async () => {
           try {
             const tx = await gameReg.setFactoryGame(gameAddress1, player1, player2, {from: badboy})
@@ -51,7 +51,7 @@ contract('GameRegistry', function(accounts) {
         })
     })
 
-    describe('set game contract as game owner', () => {
+    describe('Set game contract as game owner', () => {
         before(async () => {
           await gameReg.setFactoryGame(gameAddress1, player1, player2, {from: factory})
           await gameReg.setGameOwner({from: gameAddress1})
@@ -62,7 +62,7 @@ contract('GameRegistry', function(accounts) {
         })
     })
 
-    describe('set game contract as  game owner but not factory game.', () => {
+    describe('Set game contract as  game owner but not factory game.', () => {
         it('should fail', async () => {
           try {
             await gameReg.setGameOwner({from: gameAddress1})
@@ -72,7 +72,7 @@ contract('GameRegistry', function(accounts) {
         })
     })
 
-    describe('set game winner from game owner', () => {
+    describe('Set game winner from game owner', () => {
         before(async () => {
             await gameReg.setFactoryGame(gameAddress1, player1, player2, {from: factory})
             await gameReg.setGameOwner({from: gameAddress1})

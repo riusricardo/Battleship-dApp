@@ -29,7 +29,7 @@ contract('ContractFactory', function(accounts) {
       bytecode = await Battleship.bytecode
     })
 
-    describe('create a new game contract from factory', () => {
+    describe('Create a new game contract from factory', () => {
       it('should not revert and pass players to game contract', async () => {
         try {
             await instance.createContract(player1, player2, {from: owner})
@@ -39,7 +39,7 @@ contract('ContractFactory', function(accounts) {
       })
     })
 
-    describe('create a new game contract from factory and send initial data', () => {
+    describe('Create a new game contract from factory and send initial data', () => {
       it('should pass players and data to game contract', async () => {
         try {
           await instance.createAndCall(player1, player2, joinBattle, {from: owner})
@@ -49,7 +49,7 @@ contract('ContractFactory', function(accounts) {
       })
     })
 
-    describe('set bytecode into factory', () => {
+    describe('Set bytecode into factory', () => {
       before(async () => {
         await instance.setBytecode(bytecode, {from: owner})
       })
@@ -59,7 +59,7 @@ contract('ContractFactory', function(accounts) {
       })
     })
 
-    describe('concatenate to grow bytecode', () => {
+    describe('Concatenate to grow bytecode', () => {
       before(async () => {
         await instance.setBytecode(code, {from: owner})
 		    await instance.concatBytecode(code, {from: owner})
@@ -70,7 +70,7 @@ contract('ContractFactory', function(accounts) {
       })
     })
 
-    describe('set bytecode into factory after locking', () => {
+    describe('Set bytecode into factory after locking', () => {
       let tx
       before(async () => {
         tx = await instance.lockFabric({from: owner})

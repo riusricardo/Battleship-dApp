@@ -12,19 +12,16 @@ var GameRegistry = artifacts.require("GameRegistry")
 var Battleship = artifacts.require("Battleship")
 
 
-//Hacks for web3@1.0 support on truffle tests.
+//Hacks for web3@1.0 support in truffle tests.
 EthereumDIDRegistry.currentProvider.sendAsync = function() {
     return EthereumDIDRegistry.currentProvider.send.apply(EthereumDIDRegistry.currentProvider, arguments);
 };
-
 ContractFactory.currentProvider.sendAsync = function() {
     return ContractFactory.currentProvider.send.apply(ContractFactory.currentProvider, arguments);
 };
-
 GameRegistry.currentProvider.sendAsync = function() {
     return GameRegistry.currentProvider.send.apply(GameRegistry.currentProvider, arguments);
 };
-
 Battleship.currentProvider.sendAsync = function() {
     return Battleship.currentProvider.send.apply(Battleship.currentProvider, arguments);
 };
@@ -55,7 +52,19 @@ contract('Battleship', function(accounts) {
     let ethrDid2
     let signerP2
    
-    let board = 
+    let board1 = 
+    [0,0,0,3,0,0,0,0,0,0
+    ,1,0,0,0,0,0,0,0,0,0
+    ,3,0,2,2,0,0,0,1,0,0
+    ,1,0,0,3,0,0,0,0,0,0
+    ,0,0,0,0,0,2,0,1,0,0
+    ,3,0,0,0,0,0,0,0,0,0
+    ,0,0,0,0,0,0,2,0,0,2
+    ,1,0,0,3,0,0,0,0,0,0
+    ,0,0,0,3,0,0,0,0,0,0
+    ,1,0,0,3,0,0,0,0,0,0]
+
+    let board2 = 
     [0,0,0,3,0,0,0,0,0,0
     ,1,0,0,0,0,0,0,0,0,0
     ,3,0,2,2,0,0,0,1,0,0
@@ -88,7 +97,7 @@ contract('Battleship', function(accounts) {
         }
     })
 
-    describe('create a new battleship game contract from factory and send initial data', () => {
+    describe('Create a new battleship game contract from factory and send initial data', () => {
         before(async() => {
             // joinBattle is the encoded data to set player1, player2 and bet in the game.
             // player1, player2 in this function are only used for setting data in game registry.
@@ -99,12 +108,12 @@ contract('Battleship', function(accounts) {
                 games = await gameReg.getPlayerGames(player1, {from: owner})
                 gameAddress = games[games.length - 1]
             } catch (error) {
-                assert.equal(error, 'undefined')
+                assert.equal(error.message, 'undefined')
             }
         })
     })
 
-    describe('join the game as player 2 to pay the correct bet', () => {
+    describe('Join the game as player 2 to pay the correct bet', () => {
         let tx,res
         before(async() => {
             Battleship.address = gameAddress // update address to use new created game
@@ -115,7 +124,7 @@ contract('Battleship', function(accounts) {
                 // dummy used because player2 was set at creation time
                 tx = await game.joinGame(dummy, dummy, topic, {from: player2})
             } catch (error) {
-                assert.equal(error, 'undefined')
+                assert.equal(error.message, 'undefined')
             }
         })
         it('should create JoinedGame event', () => {
@@ -127,34 +136,116 @@ contract('Battleship', function(accounts) {
             try {
                 // getCurrentStateId inherited function from StateMachine
                 res = await game.getCurrentStateId({from: player2})
-                assert.equal(res, STATE1) // Create state
+                assert.equal(res, STATE1)
             } catch (error) {
-                assert.equal(error, 'undefined')
+                assert.equal(error.message, 'undefined')
             }
         })
     })
 
-    describe('Set hidden board as player1', () => {
-        let tx,signedMessage,signature,boardHash,privateKey
+    describe('Set hidden board as player1 and validate EthrDID signer', () => {
+        let tx,res,signedMessage,signature,boardHash,privateKey
         before(() => {
 
             boardHash = web3_1.utils.soliditySha3(
-                {type: 'uint8[]', value: board},
+                {type: 'uint8[]', value: board1},
                 {type: 'bytes4', value: secretP1},
                 {type: 'bytes32', value: gameAddress}
             )
 
-			privateKey = '0x'+signerP1.kp.privateKey
+            privateKey = '0x'+signerP1.kp.privateKey
             signedMessage = web3_1.eth.accounts.sign(boardHash, privateKey)
             signature = signedMessage.signature
         })
-        it('should set board hash, signature and validate EthrDID signer', async () => {
+        it('should set board hash player1, signature and validate EthrDID signer', async () => {
             try {
                 tx = await game.setHiddenBoard(boardHash, signature, {from: player1})
             } catch (error) {
                 assert.equal(error, 'undefined')
             }
         })
+        it('should be on state "Set"', async () => {
+            try {
+                // getCurrentStateId inherited function from StateMachine
+                res = await game.getCurrentStateId({from: player2})
+                assert.equal(res, STATE2)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
     })
+
+    describe('Set hidden board as player2 and validate EthrDID signer', () => {
+        let tx,res,signedMessage,signature,boardHash,privateKey
+        before(() => {
+
+            boardHash = web3_1.utils.soliditySha3(
+                {type: 'uint8[]', value: board2},
+                {type: 'bytes4', value: secretP2},
+                {type: 'bytes32', value: gameAddress}
+            )
+
+            privateKey = '0x'+signerP2.kp.privateKey
+            signedMessage = web3_1.eth.accounts.sign(boardHash, privateKey)
+            signature = signedMessage.signature
+        })
+        it('should set board hash player2, signature and validate EthrDID signer', async () => {
+            try {
+                tx = await game.setHiddenBoard(boardHash, signature, {from: player2})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should be on state "Set"', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player2})
+                assert.equal(res, STATE2)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
+
+    describe('Claim game pot without playing', () => {
+        let tx,res
+        it('should fail', async () => {
+            try {
+                tx = await game.claimBet({from: player1})
+            } catch (error) {
+                assert.equal(error.message, 'VM Exception while processing transaction: revert')
+            }
+        })
+        it('should not change state "Set"', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player2})
+
+                assert.equal(res, STATE2)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
+    describe('Start timeout', () => {
+        let res
+        it('should fail, cannot start timeout on its turn', async () => {
+            try {
+                await game.conditionalTransitions() // TODO: Validate automatic transition
+                await game.startTimeout({from: player2})
+            } catch (error) {
+                assert.equal(error.message, 'VM Exception while processing transaction: revert , cannot start timeout.')
+            }
+        })
+        it('should be on state "Play"', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player2})
+                assert.equal(res, STATE3)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
 })
 

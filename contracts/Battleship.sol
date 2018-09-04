@@ -45,7 +45,7 @@ contract Battleship is StateMachine {
         currentPlayer = address(0);
         betAmt = 0;
         timeout = 2**256 - 1;
-        timeoutInterval = 1800;
+        timeoutInterval = 2 days;
 
     }
 
@@ -103,7 +103,6 @@ contract Battleship is StateMachine {
 
     /// @dev Claim bet if the player is the  winner. By expired timeout or moves.
     function claimBet() public checkAllowed ifPlayer {
-        require(player2 != address(0), ", game has not started.");
         
         if(block.timestamp >= timeout && msg.sender == opponent(currentPlayer)){
             winner = opponent(currentPlayer);
@@ -247,7 +246,7 @@ contract Battleship is StateMachine {
         emit RevealedBoard(msg.sender, block.timestamp);
     }
     
-    /// @dev Claim player as winner. Boards need to be revealed.
+    /// @dev Claim victory. Boards need to be revealed.
     function claimVictory() public checkAllowed ifPlayer {
         uint8[] storage Board1 = playerBoard[msg.sender];
         uint8[] storage Board2 = playerBoard[opponent(msg.sender)];
