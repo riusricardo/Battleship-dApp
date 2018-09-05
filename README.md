@@ -1,5 +1,6 @@
 
 uPort login has been disabled in this branch to accelerate development.
+
 The master branch is paused due to the developer program.
 
 # Battleship-dApp ![CI status](https://img.shields.io/badge/build-passing-brightgreen.svg)
@@ -36,9 +37,10 @@ You can play against anyone in the other side of the world and even bet on the f
 Login with your mobile uPort App. (disabled in develop branch)
 
 ### Ports
-Ganache: rcp and ws -> 8545
-Geth: rcp -> 8545 and ws -> 8546
-
+```
+Ganache: rpc and ws -> 8545
+Geth: rpc -> 8545 and ws -> 8546
+```
 
 ## Tests
 

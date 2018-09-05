@@ -51,9 +51,8 @@ contract Battleship is StateMachine {
     }
 
     event ValidSigner(address player, address signer, bool result);
-    event GameInitialized(address player);
     event JoinedGame(address player, string message);
-    event MoveMade(address player, uint8 shot);
+    event StateMove(address player, uint8 shot);
     event StateChanged(string newState);
     event RevealedBoard(address player, uint blockNum);
     event GameEnded(address winner);
@@ -215,19 +214,15 @@ contract Battleship is StateMachine {
 
         nonce = _nonce + 1;
 
-        if(signer == playerSigner[player]){
-            playerMoves[player].push(_xy);
-            currentPlayer = opponent(player);
-        } else if(signer == playerSigner[opponent(player)]){
-            playerMoves[opponent(player)].push(_xy);
-            currentPlayer = player;
-        }
-
-        if(msg.sender == opponent(currentPlayer)){ 
+        if(msg.sender == opponent(player)){ 
             startTimeout();
         }else{
             resetTimeout();
         }
+        currentPlayer = opponent(player); //TODO: validate in case of sequential hits.
+        playerMoves[player].push(_xy);
+
+        emit StateMove(player, _xy);
 
     }
 
@@ -358,7 +353,6 @@ contract Battleship is StateMachine {
             && playerSigner[player1] != address(0)
             && playerSigner[player2] != address(0)
         ){
-            emit GameInitialized(msg.sender);
             emit StateChanged("Play");
             return true;
         }else{
