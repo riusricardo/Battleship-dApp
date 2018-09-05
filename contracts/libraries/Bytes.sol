@@ -37,6 +37,11 @@ library Bytes {
             addr := add(bts, /*BYTES_HEADER_SIZE*/32)
         }
     }
+
+    function toBytes(uint256 val) internal pure returns (bytes bts) {
+        bts = new bytes(32);
+        assembly { mstore(add(bts, 32), val) }
+    }
     
     function concat(bytes memory self, bytes memory other) internal pure returns (bytes result) {
         

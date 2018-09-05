@@ -25,6 +25,7 @@ contract Battleship is StateMachine {
     mapping(address => address) public playerSigner;
     mapping(address => bytes32) internal hiddenBoard;
     mapping(address => uint8[]) internal playerBoard;
+    mapping(address => uint8[]) internal playerMoves;
     mapping(address => uint8) internal hitsToPlayer;
     mapping(address => bytes4) internal secret;
     address internal ethrReg;// Ethr DID registry
@@ -45,13 +46,14 @@ contract Battleship is StateMachine {
         currentPlayer = address(0);
         betAmt = 0;
         timeout = 2**256 - 1;
-        timeoutInterval = 2 days;
+        timeoutInterval = 1 days;
 
     }
 
     event ValidSigner(address player, address signer, bool result);
     event GameInitialized(address player);
     event JoinedGame(address player, string message);
+    event MoveMade(address player, uint8 shot);
     event StateChanged(string newState);
     event RevealedBoard(address player, uint blockNum);
     event GameEnded(address winner);
@@ -75,7 +77,7 @@ contract Battleship is StateMachine {
     /// @dev Get the final revealed board.
     /// @param _player The address of the selected player..
     /// @return Board array.
-    function getPlayerBoard(address _player) external returns(uint8[]){
+    function getPlayerBoard(address _player) external view returns(uint8[]){
         uint8[] storage board = playerBoard[_player];
         return board;
     }
@@ -148,7 +150,6 @@ contract Battleship is StateMachine {
 
         hiddenBoard[msg.sender] = bytes32(0);
         playerSigner[msg.sender] = address(0);
-        hitsToPlayer[msg.sender] = 0;
 
         // Join as player 2 if not set in parameter, place the correct bet.
         if(player2 == address(0) && msg.sender != player1 && msg.sender != owner){
@@ -185,6 +186,51 @@ contract Battleship is StateMachine {
         hiddenBoard[msg.sender] = _boardHash;
     }
 
+    /// @dev Used to start timeout or recreate game history for last dispute resolution. State moves need to be ordered by nonce.
+    /// @param _xy player's move.
+    /// @param _nonce sequence of game moves.
+    /// @param _sig player's signature.
+    /// @param _replySig opponent's signature on agreed player's move.
+    function stateMove(uint8 _xy, uint8 _nonce,  bytes _sig, bytes _replySig) public checkAllowed ifPlayer {
+        require(_sig.length == 65 && _replySig.length == 65,", incorrect signature size");
+        require(_xy >= 0 && _xy <= 99,", out of range shot.");
+        require(_nonce == nonce, ", incorrect nonce number.");
+        require(_nonce >= 0 && _nonce <= 200, ", out of range nonce.");
+
+        address player;
+        bytes32 hash = keccak256(abi.encodePacked(_xy, _nonce, address(this)));
+        address signer = Utils.recoverSigner(hash, _sig); 
+
+        if(signer == playerSigner[player1]){
+            player = player1;
+        }else if(signer == playerSigner[player2]){
+            player = player2;
+        }else {
+            revert(", invalid signer.");
+        }
+
+        bytes32 replyHash = keccak256(abi.encodePacked(hash, _nonce, address(this)));
+        address replySigner = Utils.recoverSigner(replyHash, _replySig); 
+        require(replySigner == playerSigner[opponent(player)], ", invalid replySigner.");
+
+        nonce = _nonce + 1;
+
+        if(signer == playerSigner[player]){
+            playerMoves[player].push(_xy);
+            currentPlayer = opponent(player);
+        } else if(signer == playerSigner[opponent(player)]){
+            playerMoves[opponent(player)].push(_xy);
+            currentPlayer = player;
+        }
+
+        if(msg.sender == opponent(currentPlayer)){ 
+            startTimeout();
+        }else{
+            resetTimeout();
+        }
+
+    }
+
     /// @dev Reveal board.
     /// @param _board The player's board.
     /// @param _sig Message signature to get signer.
@@ -211,11 +257,11 @@ contract Battleship is StateMachine {
 
         //Hash inputs to recreat hidden board.
         bytes32 hash = keccak256(abi.encodePacked(playerBoard[msg.sender], _secret, address(this)));
-        require(hash == hiddenBoard[msg.sender], ", invalid own board.");
+        require(hash == hiddenBoard[msg.sender], ", invalid revealed board.");
 
         secret[msg.sender] == _secret;
 
-        //Get signer delegate from board signature. Should match with the initial hidden board.
+        //Get signer delegate from board signature. Should match with the initial hidden board and signer.
         address signer = Utils.recoverSigner(hash, _sig); 
         require(signer == playerSigner[msg.sender], ", invalid signer.");
 
@@ -235,18 +281,18 @@ contract Battleship is StateMachine {
             }
         }
 
-        //Hash inputs to recreate opponent revealed board without secret.
-        bytes32 hash2 = keccak256(abi.encodePacked(playerBoard[playerOpponentHashed], address(this)));
+        //Hash inputs to save revealed board without secret.
+        bytes32 hash2 = keccak256(abi.encodePacked(_board2, address(this)));
 
         //Get signer delegate from board signature.
-        address signer2 = Utils.recoverSigner(hash2, _sig2); // TODO: Create validate signed move.
+        address signer2 = Utils.recoverSigner(hash2, _sig2);
         require(signer2 == playerSigner[msg.sender], ", invalid signer.");
-        hiddenBoard[playerOpponentHashed] = hash2; // Not sure how useful it will be to save it. 
+        hiddenBoard[playerOpponentHashed] = hash2; 
 
         emit RevealedBoard(msg.sender, block.timestamp);
     }
     
-    /// @dev Claim victory. Boards need to be revealed.
+    /// @dev Claim victory. Boards need to be revealed. Use stateMove in case of cheaters.
     function claimVictory() public checkAllowed ifPlayer {
         uint8[] storage Board1 = playerBoard[msg.sender];
         uint8[] storage Board2 = playerBoard[opponent(msg.sender)];
@@ -263,10 +309,14 @@ contract Battleship is StateMachine {
     }
 
     /// @dev Start timeout in case of game halt.
-    function startTimeout() public  checkAllowed ifPlayer {
-        require(currentPlayer == opponent(msg.sender),", cannot start timeout.");
+    function startTimeout() internal ifPlayer {
         timeout = block.timestamp + timeoutInterval;
         emit TimeoutStarted(block.timestamp);
+    }
+
+    /// @dev Set timeout to initial state.
+    function resetTimeout() internal ifPlayer {
+        timeout = 2**256 - 1;
     }
 
     /// @dev Allow functions in the given state.
@@ -277,7 +327,8 @@ contract Battleship is StateMachine {
         allowFunction(STATE2, this.setHiddenBoard.selector);//"Set"
         allowFunction(STATE3, this.revealBoard.selector);   //"Play"
         allowFunction(STATE3, this.claimVictory.selector);  //"Play"
-        allowFunction(STATE3, this.startTimeout.selector);  //"Play"
+        allowFunction(STATE3, this.stateMove.selector);     //"Play"
+        allowFunction(STATE4, this.stateMove.selector);     //"GameOver"
         allowFunction(STATE4, this.claimBet.selector);      //"GameOver"
 
         addStartCondition(STATE2, verifyPlayers);           //"Set"
@@ -367,7 +418,7 @@ contract Battleship is StateMachine {
     /// @dev Verifies if the signer delegate is valid in the Ethr DID registry.
     /// @dev Similar to registry.call(bytes4(keccak256("validDelegate(address,bytes32,address)")), abi.encode(_identity, _delegateType, _delegate))
     /// @param _identity The address owner.
-    /// @param _delegateType Type of delegate. Signer -> bytes32 of Secp256k1VerificationKey2018.
+    /// @param _delegateType Type of delegate. Signer -> Secp256k1VerificationKey2018 -> bytes32("veriKey").
     /// @param _delegate The address of the signer delegate.
     function isValidDelegate(address _identity, bytes32 _delegateType, address _delegate) internal ifPlayer{
         require(ethrReg != address(0), ", ethr registry not set.");

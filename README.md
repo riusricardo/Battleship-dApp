@@ -1,6 +1,5 @@
-### :warning: You are in the develop branch. :warning:
-uPort login has been disabled in this branch to accelerate development.
 
+uPort login has been disabled in this branch to accelerate development.
 The master branch is paused due to the developer program.
 
 # Battleship-dApp ![CI status](https://img.shields.io/badge/build-passing-brightgreen.svg)
