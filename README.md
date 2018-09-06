@@ -1,6 +1,4 @@
 
-uPort login has been disabled in this branch to accelerate development.
-
 The master branch is paused due to the developer program.
 
 # Battleship-dApp
@@ -34,7 +32,7 @@ You can play against anyone in the other side of the world and even bet on the f
 (Terminal 3)$ yarn geth-dev:whisper
 (Terminal 1)$ yarn start
 ```
-Login with your mobile uPort App. (disabled in develop branch)
+Login with your uPort mobile App.
 
 ### Ports
 ```
