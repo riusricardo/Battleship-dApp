@@ -45,12 +45,8 @@ contract('Battleship', function(accounts) {
     const STATE4 = stringToBytes32("GameOver")
 
     const secretP1 = '0x' + require('crypto').randomBytes(4).toString('hex')
-    let ethrDid1
-    let signerP1
-
     const secretP2 = '0x' + require('crypto').randomBytes(4).toString('hex')
-    let ethrDid2
-    let signerP2
+    let ethrDid1, ethrDid2, delegateP1, delegateP2, signerP1, signerP2, privateKeyP1, privateKeyP2
    
     let board1 = 
     [0,0,0,3,0,0,0,0,0,0
@@ -84,9 +80,12 @@ contract('Battleship', function(accounts) {
 
         ethrDid1 = new EthrDID({provider: web3_1.currentProvider, registry: ethrReg.address, address: player1})
         ethrDid2 = new EthrDID({provider: web3_1.currentProvider, registry: ethrReg.address, address: player2})
-
-        signerP1 = await ethrDid1.createSigningDelegate()
-        signerP2 = await ethrDid2.createSigningDelegate()
+        delegateP1 = await ethrDid1.createSigningDelegate()
+        delegateP2 = await ethrDid2.createSigningDelegate()
+        signerP1 = delegateP1.kp.address
+        signerP2 = delegateP2.kp.address
+        privateKeyP1 = '0x'+delegateP1.kp.privateKey
+        privateKeyP2 = '0x'+delegateP2.kp.privateKey
 
         for (let i = 0; i < notFactoryGame.contract.abi.length; i++) {
             if (notFactoryGame.contract.abi[i].name === "joinGame") {
@@ -144,22 +143,29 @@ contract('Battleship', function(accounts) {
     })
 
     describe('Set hidden board as player1 and validate EthrDID signer', () => {
-        let tx,res,signedMessage,signature,boardHash,privateKey
+        let tx,res,signedMessage,signature,boardHash
         before(() => {
 
             boardHash = web3_1.utils.soliditySha3(
                 {type: 'uint8[]', value: board1},
                 {type: 'bytes4', value: secretP1},
-                {type: 'bytes32', value: gameAddress}
+                {type: 'address', value: gameAddress}
             )
 
-            privateKey = '0x'+signerP1.kp.privateKey
-            signedMessage = web3_1.eth.accounts.sign(boardHash, privateKey)
+            signedMessage = web3_1.eth.accounts.sign(boardHash, privateKeyP1)
             signature = signedMessage.signature
         })
         it('should set board hash player1, signature and validate EthrDID signer', async () => {
             try {
                 tx = await game.setHiddenBoard(boardHash, signature, {from: player1})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should return correct player1 signer', async () => {
+            try {
+                signer = await game.playerSigner(player1, {from: player1})
+                assert.equal(signer, signerP1)
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
@@ -176,22 +182,29 @@ contract('Battleship', function(accounts) {
     })
 
     describe('Set hidden board as player2 and validate EthrDID signer', () => {
-        let tx,res,signedMessage,signature,boardHash,privateKey
+        let tx,res,signer,signedMessage,signature,boardHash
         before(() => {
 
             boardHash = web3_1.utils.soliditySha3(
                 {type: 'uint8[]', value: board2},
                 {type: 'bytes4', value: secretP2},
-                {type: 'bytes32', value: gameAddress}
+                {type: 'address', value: gameAddress}
             )
 
-            privateKey = '0x'+signerP2.kp.privateKey
-            signedMessage = web3_1.eth.accounts.sign(boardHash, privateKey)
+            signedMessage = web3_1.eth.accounts.sign(boardHash, privateKeyP2)
             signature = signedMessage.signature
         })
         it('should set board hash player2, signature and validate EthrDID signer', async () => {
             try {
                 tx = await game.setHiddenBoard(boardHash, signature, {from: player2})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should return correct player2 signer', async () => {
+            try {
+                signer = await game.playerSigner(player2, {from: player2})
+                assert.equal(signer, signerP2)
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
@@ -205,40 +218,61 @@ contract('Battleship', function(accounts) {
             }
         })
     })
-
-
-    describe('Claim game pot without playing', () => {
+    
+    describe('Update from off-chain move state', () => {
         let tx,res
-        it('should fail', async () => {
+        let xy, nonce, signature, signedMessage,  moveHash
+        let replySignature, replyMessage, replyHash
+        before(() => {
+
+            xy = 11
+            nonce = 0
+            moveHash = web3_1.utils.soliditySha3(
+                {type: 'uint8', value: xy},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: gameAddress}
+            )
+            
+            signedMessage = web3_1.eth.accounts.sign(moveHash, privateKeyP1)
+            signature = signedMessage.signature
+
+            replyHash = web3_1.utils.soliditySha3(
+                {type: 'bytes32', value: moveHash},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: gameAddress}
+            )
+
+            replyMessage = web3_1.eth.accounts.sign(replyHash, privateKeyP2)
+            replySignature = replyMessage.signature
+
+        })
+        it('update game contract state', async () => {
             try {
-                tx = await game.claimBet({from: player1})
+                await game.stateMove(xy, nonce, signature, replySignature, {from: player1})
             } catch (error) {
-                assert.equal(error.message, 'VM Exception while processing transaction: revert')
+                assert.equal(error.message, 'undefined')
             }
         })
-        it('should not change state "Set"', async () => {
+        it('should be on state "Play"', async () => {
             try {
-                res = await game.getCurrentStateId({from: player2})
-
-                assert.equal(res, STATE2)
+                res = await game.getCurrentStateId({from: player1})
+                assert.equal(res, STATE3)
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
         })
     })
 
-    /*
-    describe('Start timeout', () => {
-        let res
-        it('should fail, cannot start timeout on its turn', async () => {
+    describe('Claim game pot without finishing', () => {
+        let tx,res
+        it('should fail, not on "GameOver" state', async () => {
             try {
-                await game.conditionalTransitions() //Validate and move to Play state
-                await game.startTimeout({from: player2})
+                tx = await game.claimBet({from: player1})
             } catch (error) {
-                assert.equal(error.message, 'VM Exception while processing transaction: revert , cannot start timeout.')
+                assert.equal(error.message, 'VM Exception while processing transaction: revert')
             }
         })
-        it('should be on state "Play"', async () => {
+        it('should remain on state "Play"', async () => {
             try {
                 res = await game.getCurrentStateId({from: player2})
                 assert.equal(res, STATE3)
@@ -247,7 +281,7 @@ contract('Battleship', function(accounts) {
             }
         })
     })
-    */
+    
 
 })
 

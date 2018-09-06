@@ -183,6 +183,7 @@ contract Battleship is StateMachine {
         //Validate signer delegate from Ethr registry. Secp256k1VerificationKey2018 -> "veriKey"
         isValidDelegate(msg.sender, Utils.stringToBytes32("veriKey"), signer); 
         hiddenBoard[msg.sender] = _boardHash;
+        playerSigner[msg.sender] = signer;
     }
 
     /// @dev Used to start timeout or recreate game history for last dispute resolution. State moves need to be ordered by nonce.
