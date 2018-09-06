@@ -48,29 +48,12 @@ contract('Battleship', function(accounts) {
     const secretP2 = '0x' + require('crypto').randomBytes(4).toString('hex')
     let ethrDid1, ethrDid2, delegateP1, delegateP2, signerP1, signerP2, privateKeyP1, privateKeyP2
    
-    let board1 = 
-    [0,0,0,3,0,0,0,0,0,0
-    ,1,0,0,0,0,0,0,0,0,0
-    ,3,0,2,2,0,0,0,1,0,0
-    ,1,0,0,3,0,0,0,0,0,0
-    ,0,0,0,0,0,2,0,1,0,0
-    ,3,0,0,0,0,0,0,0,0,0
-    ,0,0,0,0,0,0,2,0,0,2
-    ,1,0,0,3,0,0,0,0,0,0
-    ,0,0,0,3,0,0,0,0,0,0
-    ,1,0,0,3,0,0,0,0,0,0]
-
-    let board2 = 
-    [0,0,0,3,0,0,0,0,0,0
-    ,1,0,0,0,0,0,0,0,0,0
-    ,3,0,2,2,0,0,0,1,0,0
-    ,1,0,0,3,0,0,0,0,0,0
-    ,0,0,0,0,0,2,0,1,0,0
-    ,3,0,0,0,0,0,0,0,0,0
-    ,0,0,0,0,0,0,2,0,0,2
-    ,1,0,0,3,0,0,0,0,0,0
-    ,0,0,0,3,0,0,0,0,0,0
-    ,1,0,0,3,0,0,0,0,0,0]
+    const shipsP1 = [0,11,22,33,44,55,66,77,88,99]
+    const shipsP2 = [9,18,27,36,45,54,63,72,81,90]
+    let hitsToP1 = [33,55,77,88,99]
+    let hitsToP2 = [18,27,54,72]
+    let notHitsToP1 = [12,15,43,56,9,28,16,4]
+    let notHitsToP2 = [12,15,43,56,9,28,16,4]
 
     before(async () => {
         factory = await ContractFactory.deployed()
@@ -131,7 +114,7 @@ contract('Battleship', function(accounts) {
             assert.equal(event.event, 'JoinedGame')
             assert.equal(event.args.player, player2)
         })
-        it('should be on state "Create"', async () => {
+        it('should be on "Create" state', async () => {
             try {
                 // getCurrentStateId inherited function from StateMachine
                 res = await game.getCurrentStateId({from: player2})
@@ -143,11 +126,11 @@ contract('Battleship', function(accounts) {
     })
 
     describe('Set hidden board as player1 and validate EthrDID signer', () => {
-        let tx,res,signedMessage,signature,boardHash
+        let tx,res,signer,signedMessage,signature,boardHash
         before(() => {
 
             boardHash = web3_1.utils.soliditySha3(
-                {type: 'uint8[]', value: board1},
+                {type: 'uint8[]', value: shipsP1},
                 {type: 'bytes4', value: secretP1},
                 {type: 'address', value: gameAddress}
             )
@@ -170,7 +153,7 @@ contract('Battleship', function(accounts) {
                 assert.equal(error.message, 'undefined')
             }
         })
-        it('should be on state "Set"', async () => {
+        it('should be on "Set" state', async () => {
             try {
                 // getCurrentStateId inherited function from StateMachine
                 res = await game.getCurrentStateId({from: player2})
@@ -186,7 +169,7 @@ contract('Battleship', function(accounts) {
         before(() => {
 
             boardHash = web3_1.utils.soliditySha3(
-                {type: 'uint8[]', value: board2},
+                {type: 'uint8[]', value: shipsP2},
                 {type: 'bytes4', value: secretP2},
                 {type: 'address', value: gameAddress}
             )
@@ -209,7 +192,7 @@ contract('Battleship', function(accounts) {
                 assert.equal(error.message, 'undefined')
             }
         })
-        it('should be on state "Set"', async () => {
+        it('should be on "Set" state', async () => {
             try {
                 res = await game.getCurrentStateId({from: player2})
                 assert.equal(res, STATE2)
@@ -219,12 +202,13 @@ contract('Battleship', function(accounts) {
         })
     })
     
-    describe('Update from off-chain move state', () => {
+    describe('Update [0](from: player1) off-chain state move', () => {
         let tx,res
         let xy, nonce, signature, signedMessage,  moveHash
-        let replySignature, replyMessage, replyHash
+        let replySignature, replyMessage, replyHash, nextTurn
         before(() => {
 
+            // player2 move, starts game.
             xy = 11
             nonce = 0
             moveHash = web3_1.utils.soliditySha3(
@@ -233,27 +217,148 @@ contract('Battleship', function(accounts) {
                 {type: 'address', value: gameAddress}
             )
             
-            signedMessage = web3_1.eth.accounts.sign(moveHash, privateKeyP1)
+            signedMessage = web3_1.eth.accounts.sign(moveHash, privateKeyP2)
             signature = signedMessage.signature
 
+            // player1 reply (not hit)
+            nextTurn = player1; // replier address = no hit, sender address = hit.
             replyHash = web3_1.utils.soliditySha3(
                 {type: 'bytes32', value: moveHash},
                 {type: 'uint8', value: nonce},
+                {type: 'address', value: nextTurn},
                 {type: 'address', value: gameAddress}
             )
-
-            replyMessage = web3_1.eth.accounts.sign(replyHash, privateKeyP2)
+            replyMessage = web3_1.eth.accounts.sign(replyHash, privateKeyP1)
             replySignature = replyMessage.signature
 
         })
-        it('update game contract state', async () => {
+        it('should update game contract state', async () => {
             try {
-                await game.stateMove(xy, nonce, signature, replySignature, {from: player1})
+                tx = await game.stateMove(xy, nonce, nextTurn, signature, replySignature, {from: player1})
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
         })
-        it('should be on state "Play"', async () => {
+        it('should create StateChanged event', () => {
+            const event = tx.logs[0]
+            assert.equal(event.event, 'StateChanged')
+          })
+          it('should create State Machine transition event', () => {
+            const event = tx.logs[1]
+            assert.equal(event.event, 'Transition')
+          })
+        it('should create TimeoutReseted event', () => {
+            const event = tx.logs[2]
+            assert.equal(event.event, 'TimeoutReseted')
+          })
+        it('should fail to update same state without increasing nonce', async () => {
+            try {
+                await game.stateMove(xy, nonce, nextTurn, signature, replySignature, {from: player1})
+            } catch (error) {
+                assert.equal(error.message, 'VM Exception while processing transaction: revert , incorrect nonce number.')
+            }
+        })
+        it('should be on "Play" state', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player1})
+                assert.equal(res, STATE3)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
+    describe('Update [1](from: player1) off-chain state move and start timeout', () => {
+        let tx,res
+        let xy, nonce, signature, signedMessage,  moveHash
+        let replySignature, replyMessage, replyHash, nextTurn
+        before(() => {
+
+            // player1 move
+            xy = 35
+            nonce = 1
+            moveHash = web3_1.utils.soliditySha3(
+                {type: 'uint8', value: xy},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: gameAddress}
+            )
+            signedMessage = web3_1.eth.accounts.sign(moveHash, privateKeyP1)
+            signature = signedMessage.signature
+
+            // player2 reply (not hit)
+            nextTurn = player2; // replier address = no hit, sender address = hit.
+            replyHash = web3_1.utils.soliditySha3(
+                {type: 'bytes32', value: moveHash},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: nextTurn},
+                {type: 'address', value: gameAddress}
+            )
+            replyMessage = web3_1.eth.accounts.sign(replyHash, privateKeyP2)
+            replySignature = replyMessage.signature
+
+        })
+        it('should update game contract state', async () => {
+            try {
+                tx = await game.stateMove(xy, nonce, nextTurn, signature, replySignature, {from: player1})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should create TimeoutStarted event', () => {
+            const event = tx.logs[0]
+            assert.equal(event.event, 'TimeoutStarted')
+          })
+        it('should be on "Play" state', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player1})
+                assert.equal(res, STATE3)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
+    describe('Update [2](from: player1) off-chain state move and start timeout', () => {
+        let tx,res
+        let xy, nonce, signature, signedMessage,  moveHash
+        let replySignature, replyMessage, replyHash, nextTurn
+        before(() => {
+
+            // player2 move
+            xy = 43
+            nonce = 2
+            moveHash = web3_1.utils.soliditySha3(
+                {type: 'uint8', value: xy},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: gameAddress}
+            )
+            signedMessage = web3_1.eth.accounts.sign(moveHash, privateKeyP2)
+            signature = signedMessage.signature
+
+            // player1 reply (hit)
+            nextTurn = player2; // replier address = no hit, sender address = hit.
+            replyHash = web3_1.utils.soliditySha3(
+                {type: 'bytes32', value: moveHash},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: nextTurn},
+                {type: 'address', value: gameAddress}
+            )
+            replyMessage = web3_1.eth.accounts.sign(replyHash, privateKeyP1)
+            replySignature = replyMessage.signature
+
+        })
+        it('should update game contract state', async () => {
+            try {
+                tx = await game.stateMove(xy, nonce, nextTurn, signature, replySignature, {from: player1})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should create TimeoutStarted event', () => {
+            const event = tx.logs[0]
+            assert.equal(event.event, 'TimeoutStarted')
+          })
+        it('should be on "Play" state', async () => {
             try {
                 res = await game.getCurrentStateId({from: player1})
                 assert.equal(res, STATE3)
@@ -272,7 +377,7 @@ contract('Battleship', function(accounts) {
                 assert.equal(error.message, 'VM Exception while processing transaction: revert')
             }
         })
-        it('should remain on state "Play"', async () => {
+        it('should remain on "Play" state', async () => {
             try {
                 res = await game.getCurrentStateId({from: player2})
                 assert.equal(res, STATE3)
@@ -282,6 +387,87 @@ contract('Battleship', function(accounts) {
         })
     })
     
+    describe('Update [3](from: player1) off-chain state move and reset timeout', () => {
+        let tx,res
+        let xy, nonce, signature, signedMessage,  moveHash
+        let replySignature, replyMessage, replyHash, nextTurn
+        before(() => {
 
+            // player2 move
+            xy = 78
+            nonce = 3
+            moveHash = web3_1.utils.soliditySha3(
+                {type: 'uint8', value: xy},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: gameAddress}
+            )
+            signedMessage = web3_1.eth.accounts.sign(moveHash, privateKeyP2)
+            signature = signedMessage.signature
+
+            // player1 reply (not hit)
+            nextTurn = player1; // replier address = no hit, sender address = hit.
+            replyHash = web3_1.utils.soliditySha3(
+                {type: 'bytes32', value: moveHash},
+                {type: 'uint8', value: nonce},
+                {type: 'address', value: nextTurn},
+                {type: 'address', value: gameAddress}
+            )
+            replyMessage = web3_1.eth.accounts.sign(replyHash, privateKeyP1)
+            replySignature = replyMessage.signature
+
+        })
+        it('should update game contract state', async () => {
+            try {
+                tx = await game.stateMove(xy, nonce, nextTurn, signature, replySignature, {from: player1})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should create TimeoutReseted event', () => {
+            const event = tx.logs[0]
+            assert.equal(event.event, 'TimeoutReseted')
+          })
+        it('should be on "Play" state', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player1})
+                assert.equal(res, STATE3)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
+    /*
+    describe('Reveal board.', () => {
+        let tx,res
+        it('should save revealed board on contract', async () => {
+            try {
+                tx = await game.revealBoard(shipsP1,secretP1,{from: player1})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should create StateChanged event', () => {
+            const event = tx.logs[0]
+            assert.equal(event.event, 'StateChanged')
+        })
+        it('should create State Machine transition event', () => {
+            const event = tx.logs[1]
+            assert.equal(event.event, 'Transition')
+        })
+        it('should create RevealedBoard event', () => {
+            const event = tx.logs[2]
+            assert.equal(event.event, 'RevealedBoard')
+          })
+        it('should be on "GameOver" state', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player1})
+                assert.equal(res, STATE4)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+    */
 })
 

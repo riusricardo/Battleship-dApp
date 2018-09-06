@@ -17,17 +17,18 @@ contract Battleship is StateMachine {
     address public owner;
     address public player1;
     address public player2;
-    address public currentPlayer;
+    address public nextTurn;
     address public winner;
     uint8 public nonce;
     uint public betAmt;
     uint public timeout;
     mapping(address => address) public playerSigner;
     mapping(address => bytes32) internal hiddenBoard;
-    mapping(address => uint8[]) internal playerBoard;
+    mapping(address => uint8[]) internal playerShips;
     mapping(address => uint8[]) internal playerMoves;
     mapping(address => uint8) internal hitsToPlayer;
     mapping(address => bytes4) internal secret;
+    mapping(address => bytes) internal signature;
     address internal ethrReg;// Ethr DID registry
     address internal gameReg;// Game registry
     string internal topic; // Whisper channel topic
@@ -43,7 +44,7 @@ contract Battleship is StateMachine {
         winner = address(0);
         ethrReg = address(0);
         gameReg = address(0);
-        currentPlayer = address(0);
+        nextTurn = address(0);
         betAmt = 0;
         timeout = 2**256 - 1;
         timeoutInterval = 1 days;
@@ -57,6 +58,7 @@ contract Battleship is StateMachine {
     event RevealedBoard(address player, uint blockNum);
     event GameEnded(address winner);
     event TimeoutStarted(uint timestamp);
+    event TimeoutReseted(uint timestamp);
     event BetClaimed(address player, uint amount, uint timestamp);
 
     modifier ifPlayer() {
@@ -76,8 +78,8 @@ contract Battleship is StateMachine {
     /// @dev Get the final revealed board.
     /// @param _player The address of the selected player..
     /// @return Board array.
-    function getPlayerBoard(address _player) external view returns(uint8[]){
-        uint8[] storage board = playerBoard[_player];
+    function getplayerShips(address _player) external view returns(uint8[]){
+        uint8[] storage board = playerShips[_player];
         return board;
     }
 
@@ -105,8 +107,8 @@ contract Battleship is StateMachine {
     /// @dev Claim bet if the player is the  winner. By expired timeout or moves.
     function claimBet() public checkAllowed ifPlayer {
         
-        if(block.timestamp >= timeout && msg.sender == opponent(currentPlayer)){
-            winner = opponent(currentPlayer);
+        if(block.timestamp >= timeout && msg.sender == opponent(nextTurn)){
+            winner = opponent(nextTurn);
             require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
         }
         
@@ -159,7 +161,7 @@ contract Battleship is StateMachine {
         // Player 2 was passed as parameter without bet.
         if(msg.sender == player2){
             require(msg.value == betAmt, ", player2 incorrect bet amount.");
-            currentPlayer = player2;
+            nextTurn = player2;
             require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
             emit JoinedGame(msg.sender, "Player2");   
         } 
@@ -171,19 +173,20 @@ contract Battleship is StateMachine {
     }
 
     /// @dev Set the hash of your board.
-    /// @param _boardHash The player's grid hash.
+    /// @param _shipsHash The player's grid hash.
     /// @param _sig Message signature to get signer.
-    function setHiddenBoard(bytes32 _boardHash, bytes _sig) public checkAllowed ifPlayer {
-        require(_boardHash != bytes32(0) && _sig.length == 65);
+    function setHiddenBoard(bytes32 _shipsHash, bytes _sig) public checkAllowed ifPlayer {
+        require(_shipsHash != bytes32(0) && _sig.length == 65);
         require(hiddenBoard[msg.sender] == bytes32(0) || playerSigner[msg.sender] == address(0));
         
         //Get signer delegate from board signature.
-        address signer = Utils.recoverSigner(_boardHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
+        address signer = Utils.recoverSigner(_shipsHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
 
         //Validate signer delegate from Ethr registry. Secp256k1VerificationKey2018 -> "veriKey"
         isValidDelegate(msg.sender, Utils.stringToBytes32("veriKey"), signer); 
-        hiddenBoard[msg.sender] = _boardHash;
+        hiddenBoard[msg.sender] = _shipsHash;
         playerSigner[msg.sender] = signer;
+        signature[msg.sender] = _sig;
     }
 
     /// @dev Used to start timeout or recreate game history for last dispute resolution. State moves need to be ordered by nonce.
@@ -191,7 +194,7 @@ contract Battleship is StateMachine {
     /// @param _nonce sequence of game moves.
     /// @param _sig player's signature.
     /// @param _replySig opponent's signature on agreed player's move.
-    function stateMove(uint8 _xy, uint8 _nonce,  bytes _sig, bytes _replySig) public checkAllowed ifPlayer {
+    function stateMove(uint8 _xy, uint8 _nonce,  address _nextTurn, bytes _sig, bytes _replySig) public checkAllowed ifPlayer {
         require(_sig.length == 65 && _replySig.length == 65,", incorrect signature size");
         require(_xy >= 0 && _xy <= 99,", out of range shot.");
         require(_nonce == nonce, ", incorrect nonce number.");
@@ -209,18 +212,18 @@ contract Battleship is StateMachine {
             revert(", invalid signer.");
         }
 
-        bytes32 replyHash = keccak256(abi.encodePacked(hash, _nonce, address(this)));
+        bytes32 replyHash = keccak256(abi.encodePacked(hash, _nonce, _nextTurn, address(this)));
         address replySigner = Utils.recoverSigner(replyHash, _replySig); 
         require(replySigner == playerSigner[opponent(player)], ", invalid replySigner.");
 
         nonce = _nonce + 1;
+        nextTurn = _nextTurn;
 
-        if(msg.sender == opponent(player)){ 
+        if(msg.sender == opponent(nextTurn)){ 
             startTimeout();
         }else{
             resetTimeout();
         }
-        currentPlayer = opponent(player); //TODO: validate in case of sequential hits.
         playerMoves[player].push(_xy);
 
         emit StateMove(player, _xy);
@@ -228,70 +231,37 @@ contract Battleship is StateMachine {
     }
 
     /// @dev Reveal board.
-    /// @param _board The player's board.
-    /// @param _sig Message signature to get signer.
-    function revealBoard(uint8[] memory _board, bytes _sig, bytes4 _secret, uint8[] memory _board2, bytes _sig2) public checkAllowed ifPlayer {
-        require(_sig.length == 65 && _secret != bytes4(0));
+    /// @param _ships The player's board.
+    /// @param _secret Player's secret.
+    function revealBoard(uint8[] _ships, bytes4 _secret) public checkAllowed ifPlayer {
+        require(_secret != bytes4(0));
         require(hiddenBoard[msg.sender] != bytes32(0) && playerSigner[msg.sender] != address(0));
         require(hiddenBoard[opponent(msg.sender)] != bytes32(0) && playerSigner[opponent(msg.sender)] != address(0));
         
-        address playerOpponentHashed = Utils.toAddress(keccak256(abi.encodePacked(opponent(msg.sender))),0);
-        uint8 i;
-
-        //Clean board to get original ships, hit:3 miss:2 ship:1
-        for(i = 0; i < 100; i++){
-            if(_board[i] == 1 || _board[i] == 3){
-                playerBoard[msg.sender].push(uint8(1));
-                if(_board[i] == 3){
-                    hitsToPlayer[msg.sender] += 1;
-                }
-            }
-            else{
-                playerBoard[msg.sender].push(uint8(0));
-            }
-        }
-
+        //address playerOpponentHashed = Utils.toAddress(keccak256(abi.encodePacked(opponent(msg.sender))),0);
         //Hash inputs to recreat hidden board.
-        bytes32 hash = keccak256(abi.encodePacked(playerBoard[msg.sender], _secret, address(this)));
+        bytes32 hash = keccak256(abi.encodePacked(_ships, _secret, address(this)));
         require(hash == hiddenBoard[msg.sender], ", invalid revealed board.");
+
+        //Get signer delegate from board signature. Should match with the initial hidden board and signer.
+        address signer = Utils.recoverSigner(hash, signature[msg.sender]); 
+        require(signer == playerSigner[msg.sender], ", invalid signer.");
 
         secret[msg.sender] == _secret;
 
-        //Get signer delegate from board signature. Should match with the initial hidden board and signer.
-        address signer = Utils.recoverSigner(hash, _sig); 
-        require(signer == playerSigner[msg.sender], ", invalid signer.");
-
-        //Use loop to push msg.sender board and clean board2.
-        for(i = 0; i < 100; i++){
-            playerBoard[msg.sender].push(_board[i]); 
-            
-            //Clean board2 to get received ships, hit:3 miss:2 ship:1
-            if(_board2[i] == 1 || _board[i] == 3){
-                playerBoard[playerOpponentHashed].push(uint8(1));
-                if(_board2[i] == 3){
-                    hitsToPlayer[playerOpponentHashed] += 1;
-                }
-            }
-            else{
-                playerBoard[playerOpponentHashed].push(uint8(0));
-            }
+        uint8 i;
+        //Clean board to get original ships, hit:3 miss:2 ship:1
+        for(i = 0; i < 10; i++){
+            playerShips[msg.sender].push(_ships[i]);
         }
-
-        //Hash inputs to save revealed board without secret.
-        bytes32 hash2 = keccak256(abi.encodePacked(_board2, address(this)));
-
-        //Get signer delegate from board signature.
-        address signer2 = Utils.recoverSigner(hash2, _sig2);
-        require(signer2 == playerSigner[msg.sender], ", invalid signer.");
-        hiddenBoard[playerOpponentHashed] = hash2; 
 
         emit RevealedBoard(msg.sender, block.timestamp);
     }
     
     /// @dev Claim victory. Boards need to be revealed. Use stateMove in case of cheaters.
     function claimVictory() public checkAllowed ifPlayer {
-        uint8[] storage Board1 = playerBoard[msg.sender];
-        uint8[] storage Board2 = playerBoard[opponent(msg.sender)];
+        uint8[] storage Board1 = playerShips[msg.sender];
+        uint8[] storage Board2 = playerShips[opponent(msg.sender)];
         require(Board1.length == 100 && Board2.length == 100,", invalid revealed board size.");
 
         //address playerOpponentHashed = Utils.toAddress(keccak256(abi.encodePacked(opponent(msg.sender))),0);
@@ -313,6 +283,7 @@ contract Battleship is StateMachine {
     /// @dev Set timeout to initial state.
     function resetTimeout() internal ifPlayer {
         timeout = 2**256 - 1;
+        emit TimeoutReseted(block.timestamp);
     }
 
     /// @dev Allow functions in the given state.
@@ -338,7 +309,7 @@ contract Battleship is StateMachine {
     /// @dev Verify player conditions to transition to next state.
     /// @return If conditions met returns true.
     function verifyPlayers(bytes32) internal returns(bool){
-        if(currentPlayer == player2 && player1 != address(0) && player2 != address(0)){
+        if(nextTurn == player2 && player1 != address(0) && player2 != address(0)){
             emit StateChanged("Set");
             return true;
         } else {
@@ -364,7 +335,7 @@ contract Battleship is StateMachine {
     /// @dev Verify revealed boards conditions to transition to next state.
     /// @return If conditions met returns true. 
     function verifyRevealedBoards(bytes32) internal returns(bool){
-        if(playerBoard[player1].length == 100 && playerBoard[player2].length == 100){
+        if(playerShips[player1].length == 100 && playerShips[player2].length == 100){
             emit StateChanged("GameOver");
             emit GameEnded(winner);
             return true;

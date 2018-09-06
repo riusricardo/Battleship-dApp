@@ -3,7 +3,7 @@ uPort login has been disabled in this branch to accelerate development.
 
 The master branch is paused due to the developer program.
 
-# Battleship-dApp ![CI status](https://img.shields.io/badge/build-passing-brightgreen.svg)
+# Battleship-dApp
 
 The Battleship dApp is a decentralized game. The application uses Ethereum Whisper as its principal communication layer. Each move has a nonce and is signed by the player enabling a fast and fluid game without the need to wait mined blocks. The identities and signers are managed on the EthrDID Registry.
 
@@ -21,14 +21,14 @@ You can play against anyone in the other side of the world and even bet on the f
 * [uPort App](https://www.uport.me/)
 
 
-```
+```sh
 (Terminal 1)$ yarn install
 (Terminal 1)$ truffle compile
 ```
 
 ## Usage
 
-```
+```sh
 (Terminal 2)$ yarn ganache-dev
 (Terminal 1)$ truffle migrate --network ganache_dev
 (Terminal 3)$ yarn geth-dev:whisper
@@ -38,13 +38,17 @@ Login with your mobile uPort App. (disabled in develop branch)
 
 ### Ports
 ```
-Ganache: rpc and ws -> 8545
-Geth: rpc -> 8545 and ws -> 8546
+Ganache: rpc:8545, ws:8545
+Geth: rpc:8545, ws:8546
 ```
 
 ## Tests
 
-`$ truffle test --network ganache`
+```
+$ truffle test --network ganache
+```
+
+Truffle tests are useful to understand the game complexity.
 
 ### Accounts
 
