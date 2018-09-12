@@ -48,8 +48,8 @@ contract('Battleship', function(accounts) {
     const secretP2 = '0x' + require('crypto').randomBytes(4).toString('hex')
     let ethrDid1, ethrDid2, delegateP1, delegateP2, signerP1, signerP2, privateKeyP1, privateKeyP2
    
-    const shipsP1 = [0,11,22,33,44,55,66,77,88,99]
-    const shipsP2 = [9,18,27,36,45,54,63,72,81,90]
+    const shipsP1 = [0,11,22,33,44,55,66,77,88,99,90,80,70,60,50,40,30,20,10,9]
+    const shipsP2 = [9,18,27,36,45,54,63,72,81,90,0,1,2,3,4,5,6,7,8,99]
     let hitsToP1 = [33,55,77,88,99]
     let hitsToP2 = [18,27,54,72]
     let notHitsToP1 = [12,15,43,56,9,28,16,4]
@@ -127,21 +127,21 @@ contract('Battleship', function(accounts) {
     })
 
     describe('Set hidden board as player1 and validate EthrDID signer', () => {
-        let tx,res,signer,signedMessage,signature,boardHash
+        let tx,res,signer,signedMessage,signature,shipsHash
         before(() => {
 
-            boardHash = web3_1.utils.soliditySha3(
+            shipsHash = web3_1.utils.soliditySha3(
                 {type: 'uint[]', value: shipsP1},
                 {type: 'bytes4', value: secretP1},
                 {type: 'address', value: gameAddress}
             )
 
-            signedMessage = web3_1.eth.accounts.sign(boardHash, privateKeyP1)
+            signedMessage = web3_1.eth.accounts.sign(shipsHash, privateKeyP1)
             signature = signedMessage.signature
         })
         it('should set board hash player1, signature and validate EthrDID signer', async () => {
             try {
-                tx = await game.setHiddenBoard(boardHash, signature, {from: player1})
+                tx = await game.setHiddenShips(shipsHash, signature, {from: player1})
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
@@ -166,21 +166,21 @@ contract('Battleship', function(accounts) {
     })
 
     describe('Set hidden board as player2 and validate EthrDID signer', () => {
-        let tx,res,signer,signedMessage,signature,boardHash
+        let tx,res,signer,signedMessage,signature,shipsHash
         before(() => {
 
-            boardHash = web3_1.utils.soliditySha3(
+            shipsHash = web3_1.utils.soliditySha3(
                 {type: 'uint[]', value: shipsP2},
                 {type: 'bytes4', value: secretP2},
                 {type: 'address', value: gameAddress}
             )
 
-            signedMessage = web3_1.eth.accounts.sign(boardHash, privateKeyP2)
+            signedMessage = web3_1.eth.accounts.sign(shipsHash, privateKeyP2)
             signature = signedMessage.signature
         })
         it('should set board hash player2, signature and validate EthrDID signer', async () => {
             try {
-                tx = await game.setHiddenBoard(boardHash, signature, {from: player2})
+                tx = await game.setHiddenShips(shipsHash, signature, {from: player2})
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
@@ -442,7 +442,7 @@ contract('Battleship', function(accounts) {
         let tx,res
         it('should save revealed board on contract', async () => {
             try {
-                tx = await game.revealBoard(shipsP1,secretP1,{from: player1})
+                tx = await game.revealMyBoard(shipsP1, hitsToP1, notHitsToP1, secretP1, {from: player1})
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
@@ -465,7 +465,7 @@ contract('Battleship', function(accounts) {
         let tx,res
         it('should save revealed board on contract', async () => {
             try {
-                tx = await game.revealBoard(shipsP2,secretP2,{from: player2})
+                tx = await game.revealMyBoard(shipsP2, hitsToP2, notHitsToP2, secretP2, {from: player2})
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }

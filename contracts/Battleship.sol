@@ -1,11 +1,12 @@
 pragma solidity 0.4.24;
 
 import "@tokenfoundry/state-machine/contracts/StateMachine.sol";
-import "./libraries/Utils.sol";
+import "openzeppelin-solidity/contracts/ECRecovery.sol";
+import "./libraries/Bytes.sol";
 
 contract Battleship is StateMachine {
 
-    using Utils for *;
+    using ECRecovery for bytes32;
 
     // Game states
     bytes32 constant STATE1 = "Create";
@@ -23,10 +24,11 @@ contract Battleship is StateMachine {
     uint public betAmt;
     uint public timeout;
     mapping(address => address) public playerSigner;
-    mapping(address => bytes32) internal hiddenBoard;
+    mapping(address => bytes32) internal hiddenShips;
     mapping(address => uint[]) internal playerShips;
     mapping(address => uint[]) internal playerMoves;
-    mapping(address => uint) internal hitsToPlayer;
+    mapping(address => uint[]) internal hitsToPlayer;
+    mapping(address => uint[]) internal notHitsToPlayer;
     mapping(address => bytes4) internal secret;
     address internal ethrReg;// Ethr DID registry
     address internal gameReg;// Game registry
@@ -81,7 +83,6 @@ contract Battleship is StateMachine {
     }
 
     /// @dev Get topic for whisper channel if joined as player. 
-    /// Not really hidden, only from non advanced users.
     /// @return String topic.
     function getTopic() external view ifPlayer returns(string){
         return topic;
@@ -146,7 +147,7 @@ contract Battleship is StateMachine {
             require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
         }
 
-        hiddenBoard[msg.sender] = bytes32(0);
+        hiddenShips[msg.sender] = bytes32(0);
         playerSigner[msg.sender] = address(0);
 
         // Join as player 2 if not set in parameter, place the correct bet.
@@ -172,19 +173,19 @@ contract Battleship is StateMachine {
     /// @dev Set the hash of your board.
     /// @param _shipsHash The player's grid hash.
     /// @param _sig Message signature to get signer.
-    function setHiddenBoard(bytes32 _shipsHash, bytes _sig) public checkAllowed ifPlayer {
+    function setHiddenShips(bytes32 _shipsHash, bytes _sig) public checkAllowed ifPlayer {
         require(_shipsHash != bytes32(0) && _sig.length == 65);
-        require(hiddenBoard[msg.sender] == bytes32(0) || playerSigner[msg.sender] == address(0));
+        require(hiddenShips[msg.sender] == bytes32(0) || playerSigner[msg.sender] == address(0));
         
-        //Get signer delegate from board signature.
-        address signer = Utils.recoverSigner(_shipsHash, _sig); // Board hash is keccak256(board[], secret, gameAddress)
+        //Get signer delegate from board signature. _shipsHash is keccak256(board[], secret, gameAddress)
+        address signer = ECRecovery.recover(_shipsHash.toEthSignedMessageHash(),_sig);
 
         //Validate signer delegate from Ethr registry. Secp256k1VerificationKey2018 -> "veriKey"
-        bool result = isValidDelegate(msg.sender, Utils.stringToBytes32("veriKey"), signer); 
+        bool result = isValidDelegate(msg.sender, Bytes.stringToBytes32("veriKey"), signer); 
         require(result == true, ", not a valid ethr signer delegate.");
         emit ValidSigner(msg.sender, signer, result);
 
-        hiddenBoard[msg.sender] = _shipsHash;
+        hiddenShips[msg.sender] = _shipsHash;
         playerSigner[msg.sender] = signer;
     }
 
@@ -201,7 +202,7 @@ contract Battleship is StateMachine {
 
         address player;
         bytes32 hash = keccak256(abi.encodePacked(_xy, _nonce, address(this)));
-        address signer = Utils.recoverSigner(hash, _sig); 
+        address signer = ECRecovery.recover(hash.toEthSignedMessageHash(), _sig); 
 
         if(signer == playerSigner[player1]){
             player = player1;
@@ -212,7 +213,7 @@ contract Battleship is StateMachine {
         }
 
         bytes32 replyHash = keccak256(abi.encodePacked(hash, _nonce, _nextTurn, address(this)));
-        address replySigner = Utils.recoverSigner(replyHash, _replySig); 
+        address replySigner = ECRecovery.recover(replyHash.toEthSignedMessageHash(), _replySig); 
         require(replySigner == playerSigner[opponent(player)], ", invalid replySigner.");
 
         nonce = _nonce + 1;
@@ -229,38 +230,69 @@ contract Battleship is StateMachine {
 
     }
 
-    /// @dev Reveal board.
+    /// @dev Reveal my board.
     /// @param _ships The player's board.
     /// @param _secret Player's secret.
-    function revealBoard(uint[] _ships, bytes4 _secret) public checkAllowed ifPlayer {
-        require(_secret != bytes4(0));
-        require(hiddenBoard[msg.sender] != bytes32(0) && playerSigner[msg.sender] != address(0));
-        require(hiddenBoard[opponent(msg.sender)] != bytes32(0) && playerSigner[opponent(msg.sender)] != address(0));
+    function revealMyBoard(uint[] _ships, uint[] _hits, uint[] _notHits, bytes4 _secret) public checkAllowed ifPlayer {
+        require(_ships.length == 20,", incorrect ships input lenght.");
+        require(_hits.length > 0 && _hits.length <= 20 && _notHits.length > 0 && _notHits.length <= 80,", incorrect revealed board size.");
+        require(_secret != bytes4(0), ", incorrect secret type.");
+        require(hiddenShips[msg.sender] != bytes32(0) && playerSigner[msg.sender] != address(0));
+        require(hiddenShips[opponent(msg.sender)] != bytes32(0) && playerSigner[opponent(msg.sender)] != address(0));
         
         //Hash inputs to recreate hidden board.
         bytes32 hash = keccak256(abi.encodePacked(_ships, _secret, address(this)));
-        require(hash == hiddenBoard[msg.sender], ", invalid revealed board.");
+        require(hash == hiddenShips[msg.sender], ", invalid revealed board.");
 
         secret[msg.sender] == _secret;
 
         uint i;
-        for(i = 0; i < 10; i++){
+        for(i = 0; i < 20; i++){
             playerShips[msg.sender].push(_ships[i]);
         }
+        // _hits length > 0 and <= 20
+        for(i = 0; i < _hits.length; i++){
+            hitsToPlayer[msg.sender].push(_hits[i]);
+        }
+        // _notHits length > 0 and <= 80
+        for(i = 0; i < _notHits.length; i++){
+            notHitsToPlayer[msg.sender].push(_notHits[i]);
+        }
+
         emit RevealedBoard(msg.sender, block.timestamp);
     }
+
+    /// @dev Reveal played board.
+    function revealOtherBoard(uint[] _hits, uint[] _notHits) public checkAllowed ifPlayer {
+        require(_hits.length > 0 && _hits.length <= 20 && _notHits.length > 0 && _notHits.length <= 80,", incorrect revealed board size.");
+        require(hiddenShips[msg.sender] != bytes32(0) && playerSigner[msg.sender] != address(0));
+        require(hiddenShips[opponent(msg.sender)] != bytes32(0) && playerSigner[opponent(msg.sender)] != address(0));
+
+        address playerAddrHash = Bytes.toAddress(keccak256(abi.encodePacked(msg.sender)),0);
+        uint i;
+        // _hits length > 0 and <= 20
+        for(i = 0; i < _hits.length; i++){
+            hitsToPlayer[playerAddrHash].push(_hits[i]);
+        }
+        // _notHits length > 0 and <= 80
+        for(i = 0; i < _notHits.length; i++){
+            notHitsToPlayer[playerAddrHash].push(_notHits[i]);
+        }
+
+        emit RevealedBoard(playerAddrHash, block.timestamp);
+    }
     
-    /// @dev Claim victory. Boards need to be revealed. Use stateMove in case of cheaters.
+    /// @dev Claim victory. Boards need to be revealed and match. Use stateMove in case of cheaters.
     function claimVictory() public checkAllowed ifPlayer {
         uint[] storage Board1 = playerShips[msg.sender];
         uint[] storage Board2 = playerShips[opponent(msg.sender)];
-        require(Board1.length == 100 && Board2.length == 100,", invalid revealed board size.");
+        require(Board1.length == 20 && Board2.length == 20,", invalid revealed board size.");
 
-        //address playerOpponentHashed = Utils.toAddress(keccak256(abi.encodePacked(opponent(msg.sender))),0);
+        //address playerOpponentHash = Bytes.toAddress(keccak256(abi.encodePacked(opponent(msg.sender))),0);
         uint requiredToWin = 20;
         
 
-        if(hitsToPlayer[opponent(msg.sender)] == requiredToWin){
+        if(hitsToPlayer[opponent(msg.sender)][0] == requiredToWin){
             winner = msg.sender;
             require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
         }
@@ -282,20 +314,21 @@ contract Battleship is StateMachine {
     function setupStates() internal {
         setStates(states);
 
-        allowFunction(STATE1, this.joinGame.selector);      //"Create"
-        allowFunction(STATE2, this.setHiddenBoard.selector);//"Set"
-        allowFunction(STATE3, this.stateMove.selector);     //"Play"
-        allowFunction(STATE3, this.revealBoard.selector);   //"Play"
-        allowFunction(STATE4, this.stateMove.selector);     //"GameOver"
-        allowFunction(STATE4, this.revealBoard.selector);   //"GameOver"
-        allowFunction(STATE4, this.claimVictory.selector);  //"GameOver"
-        allowFunction(STATE4, this.claimBet.selector);      //"GameOver"
+        allowFunction(STATE1, this.joinGame.selector);        //"Create"
+        allowFunction(STATE2, this.setHiddenShips.selector);  //"Set"
+        allowFunction(STATE3, this.stateMove.selector);       //"Play"
+        allowFunction(STATE3, this.revealMyBoard.selector);   //"Play"
+        allowFunction(STATE4, this.stateMove.selector);       //"GameOver"
+        allowFunction(STATE4, this.revealMyBoard.selector);   //"GameOver"
+        allowFunction(STATE4, this.revealOtherBoard.selector);//"GameOver"
+        allowFunction(STATE4, this.claimVictory.selector);    //"GameOver"
+        allowFunction(STATE4, this.claimBet.selector);        //"GameOver"
 
-        addStartCondition(STATE2, verifyPlayers);           //"Set"
-        addStartCondition(STATE3, verifyBoard);             //"Play"
-        addStartCondition(STATE4, verifyRevealedBoards);    //"GameOver"        
-        addStartCondition(STATE4, verifyWinner);            //"GameOver"
-        addStartCondition(STATE4, verifyTimeout);           //"GameOver"
+        addStartCondition(STATE2, verifyPlayers);         //"Set"
+        addStartCondition(STATE3, verifyBoard);           //"Play"
+        addStartCondition(STATE4, verifyRevealedBoards);  //"GameOver"        
+        addStartCondition(STATE4, verifyWinner);          //"GameOver"
+        addStartCondition(STATE4, verifyTimeout);         //"GameOver"
 
     }
 
@@ -313,8 +346,8 @@ contract Battleship is StateMachine {
     /// @dev Verify boards ready conditions to transition to next state.
     /// @return If conditions met returns true.
     function verifyBoard(bytes32) internal returns(bool){
-        if( hiddenBoard[player1] != bytes32(0) 
-            && hiddenBoard[player2] != bytes32(0)
+        if( hiddenShips[player1] != bytes32(0) 
+            && hiddenShips[player2] != bytes32(0)
             && playerSigner[player1] != address(0)
             && playerSigner[player2] != address(0)
         ){

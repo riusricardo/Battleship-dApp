@@ -1,12 +1,7 @@
 # seed
-#key.json
+# key.json
 build/
 .dev/datadir/geth
-
-*.lock
-*LOCK
-*nodekey
-*transactions.rlp
 
 # Logs
 logs

@@ -2,13 +2,47 @@ pragma solidity 0.4.24;
 
 library Bytes {
 
-
     // Size of a word, in bytes.
     uint internal constant WORD_SIZE = 32;
     // Size of the header of a 'bytes' array.
     uint internal constant BYTES_HEADER_SIZE = 32;
     // Address of the free memory pointer.
     uint internal constant FREE_MEM_PTR = 0x40;
+
+    function stringToBytes32(string memory _string) internal pure returns (bytes32) {
+        bytes memory temp = bytes(_string);
+        bytes32 result;
+        require(temp.length > 0);
+
+        assembly {
+            result := mload(add(_string, 32))
+        }
+        return result;
+    }
+
+    function toAddress(bytes32 _bytes, uint _start) internal pure returns (address) {
+        require(_bytes.length >= (_start + 20));
+        address tempAddress;
+
+        assembly {
+            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
+        }
+        return tempAddress;
+    }
+
+    function uintToBytes(uint256 val) internal pure returns (bytes bts) {
+        bts = new bytes(32);
+        assembly { mstore(add(bts, 32), val) }
+    }
+    
+    // This function does the same as 'dataPtr(bytes memory)', but will also return the
+    // length of the provided bytes array.
+    function fromBytes(bytes memory bts) internal pure returns (uint addr, uint len) {
+        len = bts.length;
+        assembly {
+            addr := add(bts, /*BYTES_HEADER_SIZE*/32)
+        }
+    }
 
 	function copy(uint src, uint dest, uint len) internal pure {
         // Copy word-length chunks while possible
@@ -29,20 +63,6 @@ library Bytes {
         }
     }
 
-    // This function does the same as 'dataPtr(bytes memory)', but will also return the
-    // length of the provided bytes array.
-    function fromBytes(bytes memory bts) internal pure returns (uint addr, uint len) {
-        len = bts.length;
-        assembly {
-            addr := add(bts, /*BYTES_HEADER_SIZE*/32)
-        }
-    }
-
-    function toBytes(uint256 val) internal pure returns (bytes bts) {
-        bts = new bytes(32);
-        assembly { mstore(add(bts, 32), val) }
-    }
-    
     function concat(bytes memory self, bytes memory other) internal pure returns (bytes result) {
         
         bytes memory ret = new bytes(self.length + other.length);
