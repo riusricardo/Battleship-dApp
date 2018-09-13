@@ -1,7 +1,7 @@
 
 The master branch is paused due to the developer program.
 
-# Battleship-dApp
+# Battleship-dApp [![CircleCI](https://circleci.com/gh/riusricardo/Battleship-dApp.svg?style=svg)](https://circleci.com/gh/riusricardo/Battleship-dApp)
 
 The Battleship dApp is a decentralized game. The application uses Ethereum Whisper as its principal communication layer. Each move has a nonce and is signed by the player enabling a fast and fluid game without the need to wait mined blocks. The identities and signers are managed on the EthrDID Registry.
 
