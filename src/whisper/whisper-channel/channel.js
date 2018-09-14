@@ -301,11 +301,8 @@ class Channel {
         await sleep(3); //Race condition, TODO: promisify
         console.log("Revoke Whisper asymmetric public key.")
         const id = await self.getIdPubKey(self.identity, self.topic);
-        const owner = await self.ethrDid.lookupOwner();
         const name = "chPubKey#" + self.topic + id.delegateNum;
-        self.registry.revokeAttribute(self.identity, stringToBytes32(name) , id.pubKey, {from: owner});
-
-        //self.ethrDid.revokeAttribute(name, id.pubKey);
+        self.ethrDid.revokeAttribute(name, id.pubKey);
         
         self.identity = null; 
         self.identity2 =  null;
