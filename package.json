@@ -73,7 +73,7 @@
     "ethjs-contract": "^0.2.3",
     "ethjs-provider-http": "^0.1.6",
     "ethjs-query": "^0.3.8",
-    "ethr-did": "^1.0.0",
+    "ethr-did": "git+https://git@github.com/riusricardo/ethr-did.git#develop",
     "ethr-did-resolver": "^0.1.1",
     "interval-promise": "^1.2.0",
     "react": "^16.4.2",

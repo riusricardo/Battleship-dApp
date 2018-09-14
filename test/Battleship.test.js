@@ -461,11 +461,11 @@ contract('Battleship', function(accounts) {
         })
     })
 
-    describe('Reveal player2 board.', () => {
+    describe('Reveal player1 played board.', () => {
         let tx,res
         it('should save revealed board on contract', async () => {
             try {
-                tx = await game.revealMyBoard(shipsP2, hitsToP2, notHitsToP2, secretP2, {from: player2})
+                tx = await game.revealOtherBoard(hitsToP2, notHitsToP2, {from: player1})
             } catch (error) {
                 assert.equal(error.message, 'undefined')
             }
@@ -482,6 +482,52 @@ contract('Battleship', function(accounts) {
             const event = tx.logs[2]
             assert.equal(event.event, 'RevealedBoard')
           })
+        it('should be on "GameOver" state', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player1})
+                assert.equal(res, STATE4)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
+    describe('Reveal player2 board.', () => {
+        let tx,res
+        it('should save revealed board on contract', async () => {
+            try {
+                tx = await game.revealMyBoard(shipsP2, hitsToP2, notHitsToP2, secretP2, {from: player2})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should create RevealedBoard event', () => {
+            const event = tx.logs[0]
+            assert.equal(event.event, 'RevealedBoard')
+        })
+        it('should be on "GameOver" state', async () => {
+            try {
+                res = await game.getCurrentStateId({from: player1})
+                assert.equal(res, STATE4)
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+    })
+
+    describe('Reveal player2 played board.', () => {
+        let tx,res
+        it('should save revealed board on contract', async () => {
+            try {
+                tx = await game.revealOtherBoard(hitsToP1, notHitsToP1, {from: player2})
+            } catch (error) {
+                assert.equal(error.message, 'undefined')
+            }
+        })
+        it('should create RevealedBoard event', () => {
+            const event = tx.logs[0]
+            assert.equal(event.event, 'RevealedBoard')
+        })
         it('should be on "GameOver" state', async () => {
             try {
                 res = await game.getCurrentStateId({from: player1})

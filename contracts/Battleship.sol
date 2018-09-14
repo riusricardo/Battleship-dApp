@@ -34,6 +34,7 @@ contract Battleship is StateMachine {
     address internal gameReg;// Game registry
     string internal topic; // Whisper channel topic
     uint internal timeoutInterval;
+    bool internal fairGame;
     
     constructor() public payable{
         owner = msg.sender;
@@ -47,7 +48,7 @@ contract Battleship is StateMachine {
         betAmt = 0;
         timeout = 2**256 - 1;
         timeoutInterval = 1 days;
-
+        fairGame = false;
     }
 
     event ValidSigner(address player, address signer, bool result);
@@ -268,7 +269,7 @@ contract Battleship is StateMachine {
         require(hiddenShips[msg.sender] != bytes32(0) && playerSigner[msg.sender] != address(0));
         require(hiddenShips[opponent(msg.sender)] != bytes32(0) && playerSigner[opponent(msg.sender)] != address(0));
 
-        address playerAddrHash = Bytes.toAddress(keccak256(abi.encodePacked(msg.sender)),0);
+        address playerAddrHash = Bytes.toAddress(keccak256(abi.encodePacked(msg.sender)));
         uint i;
         // _hits length > 0 and <= 20
         for(i = 0; i < _hits.length; i++){
@@ -287,15 +288,33 @@ contract Battleship is StateMachine {
         uint[] storage Board1 = playerShips[msg.sender];
         uint[] storage Board2 = playerShips[opponent(msg.sender)];
         require(Board1.length == 20 && Board2.length == 20,", invalid revealed board size.");
-
-        //address playerOpponentHash = Bytes.toAddress(keccak256(abi.encodePacked(opponent(msg.sender))),0);
         uint requiredToWin = 20;
+        address player;
+        address playerOpponentHash;
         
+        playerOpponentHash = Bytes.toAddress(keccak256(abi.encodePacked(opponent(player1))));
+        bytes32 hash1 = keccak256(abi.encodePacked(hitsToPlayer[player1]));
+        bytes32 hash2 = keccak256(abi.encodePacked(hitsToPlayer[playerOpponentHash]));
+        bytes32 hash3 = keccak256(abi.encodePacked(notHitsToPlayer[player1]));
+        bytes32 hash4 = keccak256(abi.encodePacked(notHitsToPlayer[playerOpponentHash]));
 
-        if(hitsToPlayer[opponent(msg.sender)][0] == requiredToWin){
-            winner = msg.sender;
-            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
+        playerOpponentHash = Bytes.toAddress(keccak256(abi.encodePacked(opponent(player2))));
+        bytes32 hash5 = keccak256(abi.encodePacked(hitsToPlayer[player2]));
+        bytes32 hash6 = keccak256(abi.encodePacked(hitsToPlayer[playerOpponentHash]));
+        bytes32 hash7 = keccak256(abi.encodePacked(notHitsToPlayer[player2]));
+        bytes32 hash8 = keccak256(abi.encodePacked(notHitsToPlayer[playerOpponentHash]));
+
+        if((hash1 == hash2) && (hash3 == hash4) && (hash5 == hash6) && (hash7 == hash8)){
+            fairGame = true;
+        } else{
+            fairGame = false;
         }
+
+        //hitsToPlayer[opponent(msg.sender)].lenght == requiredToWin;
+        //winner = msg.sender;
+        //require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
+    
+        
     }
 
     /// @dev Start timeout in case of game halt.

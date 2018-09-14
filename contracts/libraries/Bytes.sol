@@ -20,14 +20,9 @@ library Bytes {
         return result;
     }
 
-    function toAddress(bytes32 _bytes, uint _start) internal pure returns (address) {
-        require(_bytes.length >= (_start + 20));
-        address tempAddress;
-
-        assembly {
-            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
-        }
-        return tempAddress;
+    function toAddress(bytes32 _bytes) internal pure returns (address) {
+        require(_bytes.length == 32,", invalid conversion to Address");
+        return address(bytes20(_bytes));
     }
 
     function uintToBytes(uint256 val) internal pure returns (bytes bts) {
