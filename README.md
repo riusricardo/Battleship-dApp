@@ -33,8 +33,9 @@ You can play against anyone in the other side of the world and even bet on the f
 Login with your mobile uPort App. (disabled in develop branch)
 
 ### Ports
-Ganache: rcp and ws -> 8545
+Ganache: rcp and ws -> 8546
 Geth: rcp -> 8545 and ws -> 8546
+Geth:Whisper -> 8547
 
 
 ## Tests
