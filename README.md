@@ -38,6 +38,10 @@ Login with your uPort mobile App.
 Ganache - rpc:8545, ws:8545
 Geth - rpc:8545, ws:8546
 ```
+```
+App runs on http://localhost:3000
+```
+
 
 ## Tests
 

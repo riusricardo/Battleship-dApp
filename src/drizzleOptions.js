@@ -3,6 +3,7 @@ import Battleship from './../build/contracts/Battleship.json'
 import ContractFactory from './../build/contracts/ContractFactory.json'
 import GameRegistry from './../build/contracts/GameRegistry.json'
 import EthereumDIDRegistry from './../build/contracts/EthereumDIDRegistry.json'
+import AdminUpgradeabilityProxy from './../build/contracts/AdminUpgradeabilityProxy.json'
 
 let drizzleOptions = {
   web3: {
@@ -15,6 +16,7 @@ let drizzleOptions = {
     ContractFactory,
     GameRegistry,
     EthereumDIDRegistry,
+    AdminUpgradeabilityProxy,
     Battleship
   ],
   events: {

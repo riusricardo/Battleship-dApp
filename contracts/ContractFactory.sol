@@ -1,19 +1,23 @@
 pragma solidity 0.4.24;
 
-import "zos-lib/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
-import "openzeppelin-solidity/contracts/lifecycle/Destructible.sol";
+// imported for deployment
 import "ethr-did-registry/contracts/EthereumDIDRegistry.sol";
+import "zos-lib/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
+
+// imported for internal usage
+import "zos-lib/contracts/migrations/Initializable.sol";
+import "openzeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "./libraries/Bytes.sol";
 
-contract ContractFactory is Destructible {
+contract ContractFactory is Initializable,Destructible {
 
     address public ethReg;
     address public gameReg;
     uint public creationTime;
-    bytes internal bytecode;
     bool internal locked;
+    bytes internal bytecode;
     
-    constructor(address _ethReg, address _gameReg) public {
+    function initialize(address _ethReg, address _gameReg) external isInitializer {
         ethReg = _ethReg;
         gameReg = _gameReg;
         bytecode = hex"0000000000000000000000000000000000000000";
