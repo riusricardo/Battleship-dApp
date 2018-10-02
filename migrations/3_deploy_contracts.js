@@ -13,7 +13,11 @@ module.exports = function(deployer) {
 	bytecode = code.toString()
 	const size = bytecode.length -1
 
-  deployer.deploy(ContractFactory, EthereumDIDRegistry.address, GameRegistry.address)
+	deployer.deploy(ContractFactory)
+	.then(function(instance) {
+		tx = instance.initialize(EthereumDIDRegistry.address, GameRegistry.address,{gas: 3141592})
+		return instance;
+	})
 	.then(function(instance) {
 		var pos=8001;
 		var i=0, j = 0;

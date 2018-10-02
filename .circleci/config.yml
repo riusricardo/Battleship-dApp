@@ -1,0 +1,49 @@
+# Javascript Node CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+#
+version: 2
+
+defaults: &defaults
+  working_directory: ~/Battleship-dApp
+  docker:
+  - image: circleci/node:8.12.0 
+
+jobs:
+
+  geth:
+    working_directory: ~/Battleship-dApp
+    docker:
+    - image: ethereum/client-go:v1.8.13
+      command: [--networkid=1337, --datadir=.dev/datadir, --cache=1024, --cache.database=75, --port=30303, --rpc, --rpcport=8545, --rpcaddr=localhost , --rpccorsdomain="*", --nodiscover, --maxpeers=0, --ws, --wsport=8546, --wsaddr=localhost, --wsorigins="*", --mine, --minerthreads=1, --shh, '--rpcapi=eth,web3,net,debug,shh,personal', '--wsapi=eth,web3,net,shh,debug,personal', --targetgaslimit=800000000, --gasprice=1000000000, --dev, --dev.period=1]
+    steps:
+      - checkout
+      - run: ls
+
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run: npm install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      # run tests!
+      - run: npm run truffle-tests
+workflows:
+  version: 2
+  geth-and-build:
+    jobs:
+      - build
+
+
+
