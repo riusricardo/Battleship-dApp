@@ -96,7 +96,7 @@ class BoardGame extends Component {
             <DialogContentText id="alert-dialog-description">
               We'll travel through time and space to the moment when pirates dominated the 7 seas. 
               Let the games begin !!!
-                -- 🎵 Yo-Ho Yo-Ho A Pirate's Life for Me ... 🎶  
+                --<span role="img" aria-label="Note">🎵 </span>Yo-Ho Yo-Ho A Pirate's Life for Me ...<span role="img" aria-label="Notes"> 🎶 </span> 
             </DialogContentText>
           </DialogContent>
           <DialogActions>

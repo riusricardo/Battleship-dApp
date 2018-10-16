@@ -7,7 +7,7 @@ import RegistryContractABI from 'ethr-did-resolver/contracts/ethr-did-registry.j
 import EthrDID from 'ethr-did'
 import {verifyJWT} from 'did-jwt'
 import register from 'ethr-did-resolver'
-import {stringToBytes32, bytes32toString} from 'ethr-did-resolver'
+import {bytes32toString} from 'ethr-did-resolver'
 import interval from 'interval-promise'
 import resolver from 'did-resolver'
 import store from '../../store'
@@ -78,6 +78,7 @@ class Channel {
                 let delNum;
                 let i = 0;
                 while(!valid){
+                    // eslint-disable-next-line
                     doc.publicKey.forEach(element => {
                         if(element.ethereumAddress === kp.address){
                             valid = true;
@@ -108,6 +109,7 @@ class Channel {
                 let signer = null;
                 let i = 0;
                 while(!valid){
+                    // eslint-disable-next-line
                     doc.publicKey.forEach(element => {
                         let dPos = element.id.indexOf("-") 
                         let delNumIn = element.id.substring(dPos, element.id.length)
