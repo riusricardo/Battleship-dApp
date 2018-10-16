@@ -1,9 +1,9 @@
 import Web3 from 'web3'
-import Battleship from './../build/contracts/Battleship.json'
-import ContractFactory from './../build/contracts/ContractFactory.json'
-import GameRegistry from './../build/contracts/GameRegistry.json'
-import EthereumDIDRegistry from './../build/contracts/EthereumDIDRegistry.json'
-import AdminUpgradeabilityProxy from './../build/contracts/AdminUpgradeabilityProxy.json'
+import Battleship from './contracts/Battleship.json'
+import ContractFactory from './contracts/ContractFactory.json'
+import GameRegistry from './contracts/GameRegistry.json'
+import EthereumDIDRegistry from './contracts/EthereumDIDRegistry.json'
+import AdminUpgradeabilityProxy from './contracts/AdminUpgradeabilityProxy.json'
 
 let drizzleOptions = {
   web3: {

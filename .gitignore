@@ -1,7 +1,12 @@
 # seed
 # key.json
+
 build/
 .dev/datadir/geth
+
+# Remove lock files (OS inconsistencies)
+package-lock.json
+yarn.lock
 
 # Logs
 logs

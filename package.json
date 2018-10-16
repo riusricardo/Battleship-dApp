@@ -1,6 +1,6 @@
 {
   "name": "Battleship-dApp",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "main": "src/index.js",
   "author": "Ricardo Rius",
   "license": "Apache-2.0",
@@ -42,8 +42,8 @@
     "redux-auth-wrapper": "^1.0.0",
     "redux-saga": "^0.15.3",
     "redux-thunk": "^2.2.0",
-    "uport-connect": "^0.8.4",
-    "web3": "1.0.0-beta.34"
+    "uport-connect": "0.7.5",
+    "web3": "^1.0.0-beta.34"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -55,12 +55,12 @@
     "link-contracts:win32": "cd src && mklink \\D contracts ..\\build\\contracts",
     "truffle-tests": "node ./node_modules/truffle/build/cli.bundled.js test --network ganache",
     "truffle-migration": "(sleep 5s && node ./node_modules/truffle/build/cli.bundled.js migrate --network ganache_dev) & npm run ganache-dev",
-    "ganache-dev": "node ./node_modules/ganache-cli/build/cli.node.js -a=10 -p=8545 -i=1335 -l=8000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
+    "ganache-dev": "node ./node_modules/ganache-cli/build/cli.node.js -a=10 -b=3 -p=8545 -i=1335 -l=8000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
     "geth-dev:whisper": "npm run geth-dev:delete && geth --networkid=1337 --datadir=.dev/datadir --shh --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --wsapi=eth,web3,net,shh,debug,personal --nodiscover --maxpeers=0 --dev",
     "geth-dev:delete": "rm -fR .dev/datadir/geth/",
     "geth-dev:remove": "yes | geth removedb --datadir=.dev/datadir",
     "geth-dev:chain": "geth --networkid=1337 --datadir=.dev/datadir --unlock f18f16eebae0912a17885d743754c943b548a630,04c4b39e60ab3655af44cb928ac0da196188dd65,2eb6b952af9ef44f376e799ca44a76a28d3e8957,d84d3cd384604375a115d697e838b5b4ed681c9d,1435b9664159cc908d67c46b2f92ecb414ec8190,5fc5cea687718fbdb529f19a2fffb621aa828405,8d36227d3549846490fdf61e51a07ce5c84cfd56,cf2069750e3ce70f971f7f0af9538af7fd773e47,eee054834b10c5c76e2e25c8b00b0499f2916df2,46bbce669bd8b37660695d4f863da4665079c596 --password config/dev_pass.txt --cache=1024 --cache.database=75 --port=30303 --rpc --rpcport=8545 --rpcaddr=localhost  --rpccorsdomain=\"*\" --nodiscover --maxpeers=0 --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --mine --minerthreads=1 --shh --rpcapi=eth,web3,net,debug,shh,personal --wsapi=eth,web3,net,shh,debug,personal --targetgaslimit=800000000 --gasprice=1000000000 --dev --dev.period=1",
-    "geth-dev:supply": "geth --exec 'loadScript(\"scripts/createbalances.js\")' attach .dev/datadir/geth.ipc",
+    "geth-dev:supply": "geth --exec 'loadScript(\"config/createbalances.js\")' attach .dev/datadir/geth.ipc",
     "geth-dev": "npm run geth-dev:delete && (sleep 10s; npm run geth-dev:supply) & npm run geth-dev:chain",
     "geth-priv:remove": "yes | geth removedb --datadir=.dev/datadir",
     "geth-priv:init": "geth --datadir=.dev/datadir init .dev/datadir/gethGenesisBlock.json",
