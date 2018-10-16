@@ -1,7 +1,7 @@
 pragma solidity 0.4.24;
 
-import "@tokenfoundry/state-machine/contracts/StateMachine.sol";
-import "openzeppelin-solidity/contracts/ECRecovery.sol";
+import "./libraries/tokenfoundry/StateMachine.sol";
+import "./libraries/openzeppelin/ECRecovery.sol";
 import "./libraries/Bytes.sol";
 
 contract Battleship is StateMachine {

@@ -1,6 +1,6 @@
 pragma solidity 0.4.24;
 
-import "openzeppelin-solidity/contracts/lifecycle/Destructible.sol";
+import "./libraries/openzeppelin/lifecycle/Destructible.sol";
 
 contract GameRegistry is Destructible {
 

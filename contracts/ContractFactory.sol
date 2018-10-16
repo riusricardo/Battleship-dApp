@@ -1,12 +1,7 @@
 pragma solidity 0.4.24;
 
-// imported for deployment
-import "ethr-did-registry/contracts/EthereumDIDRegistry.sol";
-import "zos-lib/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
-
-// imported for internal usage
-import "zos-lib/contracts/migrations/Initializable.sol";
-import "openzeppelin-solidity/contracts/lifecycle/Destructible.sol";
+import "./libraries/openzeppelin/migrations/Initializable.sol";
+import "./libraries/openzeppelin/lifecycle/Destructible.sol";
 import "./libraries/Bytes.sol";
 
 contract ContractFactory is Initializable,Destructible {
