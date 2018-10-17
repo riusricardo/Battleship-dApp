@@ -1,10 +1,11 @@
 pragma solidity 0.4.24;
 
+import "./libraries/openzeppelin/migrations/Initializable.sol";
 import "./libraries/tokenfoundry/StateMachine.sol";
 import "./libraries/openzeppelin/ECRecovery.sol";
 import "./libraries/Bytes.sol";
 
-contract Battleship is StateMachine {
+contract Battleship is StateMachine,Initializable {
 
     using ECRecovery for bytes32;
 
@@ -36,7 +37,7 @@ contract Battleship is StateMachine {
     uint internal timeoutInterval;
     bool internal fairGame;
     
-    constructor() public payable{
+    constructor() public {
         owner = msg.sender;
         setupStates();
         player1 = address(0);
@@ -75,6 +76,15 @@ contract Battleship is StateMachine {
         }
     }
 
+    /// @dev Initialize registries addresses.
+    /// @param _ethrReg The address of the Ethr DID registry.
+    /// @param _gameReg The address of the Game registry.
+    function initialize(address _ethrReg, address _gameReg) external isInitializer ifOwner{
+        require(gameReg == address(0) && ethrReg == address(0), ", registry already set.");
+        ethrReg = _ethrReg;
+        gameReg = _gameReg;
+    }
+
     /// @dev Get the final revealed board.
     /// @param _player The address of the selected player..
     /// @return Board array.
@@ -87,20 +97,6 @@ contract Battleship is StateMachine {
     /// @return String topic.
     function getTopic() external view ifPlayer returns(string){
         return topic;
-    }
-
-    /// @dev Set the Ethr DID registry for identity management.
-    /// @param _ethrReg The address of the Ethr DID registry.
-    function setEthReg(address _ethrReg) public ifOwner{
-        require(ethrReg == address(0), ", ethr registry already set.");
-        ethrReg = _ethrReg;
-    }    
-    
-    /// @dev Set the Game registry to store game stats.
-    /// @param _gameReg The address of the Game registry.
-    function setGameReg(address _gameReg) public ifOwner{
-        require(gameReg == address(0), ", game registry already set.");
-        gameReg = _gameReg;
     }
 
     /// @dev Claim bet if the player is the  winner. By expired timeout or moves.

@@ -86,8 +86,7 @@ contract ContractFactory is Initializable,Destructible {
     function createAndCall(address _actor, address _actor2, bytes _data) external payable {
         address deployed = _deployCode(bytecode);
         require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address,address)")), abi.encode(deployed,_actor,_actor2)));
-        require(deployed.call(bytes4(keccak256("setEthReg(address)")), abi.encode(ethReg)));
-        require(deployed.call(bytes4(keccak256("setGameReg(address)")), abi.encode(gameReg)));
+        require(deployed.call(bytes4(keccak256("initialize(address,address)")), abi.encode(ethReg,gameReg)));
         require(deployed.call.value(msg.value)(_data),", failed to send _data.");
         emit ContractDeployed(_actor, deployed);
     }
@@ -98,8 +97,7 @@ contract ContractFactory is Initializable,Destructible {
     function createContract(address _actor, address _actor2) external {
         address deployed = _deployCode(bytecode);
         require(gameReg.call(bytes4(keccak256("setFactoryGame(address,address,address)")), abi.encode(deployed,_actor,_actor2)));
-        require(deployed.call(bytes4(keccak256("setEthReg(address)")), abi.encode(ethReg)));
-        require(deployed.call(bytes4(keccak256("setGameReg(address)")), abi.encode(gameReg)));
+        require(deployed.call(bytes4(keccak256("initialize(address,address)")), abi.encode(ethReg,gameReg)));
         emit ContractDeployed(_actor, deployed);      
     }
 
