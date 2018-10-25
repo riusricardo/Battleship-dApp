@@ -5,17 +5,25 @@ import "./libraries/tokenfoundry/StateMachine.sol";
 import "./libraries/openzeppelin/ECRecovery.sol";
 import "./libraries/Bytes.sol";
 
+/// @title Battleship game over state channels.
+/// @author Ricardo Rius  - <ricardo@rius.info>
 contract Battleship is StateMachine,Initializable {
 
     using ECRecovery for bytes32;
 
-    // Game states
+    // GAME STATES
     bytes32 constant STATE1 = "Create";
     bytes32 constant STATE2 = "Set";
     bytes32 constant STATE3 = "Play";
     bytes32 constant STATE4 = "GameOver";
     bytes32[] states = [STATE1, STATE2, STATE3, STATE4];
 
+    // FUNCTION SIGNATURES
+    bytes4 private constant REGISTRY_PLAYERS_FSIG = bytes4(keccak256("setPlayer(address,uint256,uint256)"));
+    bytes4 private constant REGISTRY_GAME_OWNER_FSIG = bytes4(keccak256("setGameOwner()"));    
+    bytes4 private constant REGISTRY_WINNER_FSIG = bytes4(keccak256("setWinner(address)"));
+
+    // STATE VARIABLES
     address public owner;
     address public player1;
     address public player2;
@@ -31,12 +39,13 @@ contract Battleship is StateMachine,Initializable {
     mapping(address => uint[]) internal hitsToPlayer;
     mapping(address => uint[]) internal notHitsToPlayer;
     mapping(address => bytes4) internal secret;
-    address internal ethrReg;// Ethr DID registry
-    address internal gameReg;// Game registry
-    string internal topic; // Whisper channel topic
+    address internal ethrReg;// Ethr DID Registry
+    address internal gameReg;// Game Registry
+    string internal topic;   // Whisper Channel Topic
     uint internal timeoutInterval;
     bool internal fairGame;
     
+    /// @dev Initializing variables here and in the Initialize function. 
     constructor() public {
         owner = msg.sender;
         setupStates();
@@ -52,6 +61,7 @@ contract Battleship is StateMachine,Initializable {
         fairGame = false;
     }
 
+    // EVENTS
     event ValidSigner(address player, address signer, bool result);
     event JoinedGame(address player, string message);
     event StateMove(address player, uint shot);
@@ -62,6 +72,7 @@ contract Battleship is StateMachine,Initializable {
     event TimeoutReseted(uint timestamp);
     event BetClaimed(address player, uint amount, uint timestamp);
 
+    // MODIFIERS
     modifier ifPlayer() {
         require(player1 != address(0) && player2 != address(0),", players not set.");
         require(msg.sender == player1 || msg.sender == player2, ", not a valid player.");
@@ -76,17 +87,11 @@ contract Battleship is StateMachine,Initializable {
         }
     }
 
-    /// @dev Initialize registries addresses.
-    /// @param _ethrReg The address of the Ethr DID registry.
-    /// @param _gameReg The address of the Game registry.
-    function initialize(address _ethrReg, address _gameReg) external isInitializer ifOwner{
-        require(gameReg == address(0) && ethrReg == address(0), ", registry already set.");
-        ethrReg = _ethrReg;
-        gameReg = _gameReg;
-    }
-
+    /*
+    EXTERNAL FUNCTIONS
+    */
     /// @dev Get the final revealed board.
-    /// @param _player The address of the selected player..
+    /// @param _player The address of the selected player.
     /// @return Board array.
     function getplayerShips(address _player) external view returns(uint[]){
         uint[] storage board = playerShips[_player];
@@ -99,12 +104,21 @@ contract Battleship is StateMachine,Initializable {
         return topic;
     }
 
+    /// @dev Initialize registries addresses.
+    /// @param _ethrReg The address of the Ethr DID registry.
+    /// @param _gameReg The address of the Game registry.
+    function initialize(address _ethrReg, address _gameReg) external isInitializer ifOwner{
+        require(gameReg == address(0) && ethrReg == address(0), ", registry already set.");
+        ethrReg = _ethrReg;
+        gameReg = _gameReg;
+    }
+
     /// @dev Claim bet if the player is the  winner. By expired timeout or moves.
-    function claimBet() public checkAllowed ifPlayer {
+    function claimBet() external checkAllowed ifPlayer {
         
         if(block.timestamp >= timeout && msg.sender == opponent(playerTurn)){
             winner = opponent(playerTurn);
-            require(gameReg.call(bytes4(keccak256("setWinner(address)")), abi.encode(winner)));
+            require(gameReg.call(REGISTRY_WINNER_FSIG, abi.encode(winner)));
         }
         
         if(msg.sender == winner)
@@ -114,6 +128,14 @@ contract Battleship is StateMachine,Initializable {
         } else {
             revert("... You are a loser :( ");
         }
+    }
+
+    /*
+    PUBLIC FUNCTIONS
+    */
+    /// @dev Fallback function
+    function () public {
+        revert();
     }
 
     /// @dev Join the game and set the bet. Player 1 is set by factory contract. 
@@ -132,16 +154,17 @@ contract Battleship is StateMachine,Initializable {
             topic = _topic;
             betAmt = msg.value;
 
-             //Set the contract address as game owner.
-            require(gameReg.call(bytes4(keccak256("setGameOwner()"))));
-            require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player1,msg.value,1)));
+            // Set the contract address as game owner.
+            require(gameReg.call(REGISTRY_GAME_OWNER_FSIG));
+            // Set player1 in registry.
+            require(gameReg.call(REGISTRY_PLAYERS_FSIG, abi.encode(player1,msg.value,1)));
             emit JoinedGame(player1, "Player1");
         }
 
         // Validate if _playerB parameter is set.
         if( _playerB != address(0) && player2 == address(0) && _playerB != player1){
             player2 = _playerB;
-            require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
+            require(gameReg.call(REGISTRY_PLAYERS_FSIG, abi.encode(player2,msg.value,2)));
         }
 
         hiddenShips[msg.sender] = bytes32(0);
@@ -157,7 +180,7 @@ contract Battleship is StateMachine,Initializable {
         if(msg.sender == player2){
             require(msg.value == betAmt, ", player2 incorrect bet amount.");
             playerTurn = player2;
-            require(gameReg.call(bytes4(keccak256("setPlayer(address,uint256,uint256)")), abi.encode(player2,msg.value,2)));
+            require(gameReg.call(REGISTRY_PLAYERS_FSIG, abi.encode(player2,msg.value,2)));
             emit JoinedGame(msg.sender, "Player2");   
         } 
 
@@ -313,6 +336,9 @@ contract Battleship is StateMachine,Initializable {
         
     }
 
+    /*
+    INTERNAL FUNCTIONS
+    */
     /// @dev Start timeout in case of game halt.
     function startTimeout() internal ifPlayer {
         timeout = block.timestamp + timeoutInterval;
@@ -429,12 +455,13 @@ contract Battleship is StateMachine,Initializable {
     function isValidDelegate(address _identity, bytes32 _delegateType, address _delegate) internal ifPlayer returns(bool result){
         require(ethrReg != address(0), ", ethr registry not set.");
         require(_identity != address(0) && _delegateType != bytes32(0) && _delegate != address(0),", invalid delegate input.");
-        bytes4 funcSig = bytes4(keccak256("validDelegate(address,bytes32,address)"));
+        bytes4 VALID_DELEG_FSIG = bytes4(keccak256("validDelegate(address,bytes32,address)"));
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             // Move pointer to free memory spot.
             let ptr := mload(0x40)
             // Put function signature at memory spot.
-            mstore(ptr,funcSig)
+            mstore(ptr,VALID_DELEG_FSIG)
             // Append arguments after function signature.
             mstore(add(ptr,0x04), _identity)
             mstore(add(ptr,0x24), _delegateType)
@@ -442,20 +469,16 @@ contract Battleship is StateMachine,Initializable {
             let success := call(
               4000, // Gas limit.
               sload(ethrReg_slot), // Append _slot to access Ethr DID registry storage.
-              0, // No ether tansfer.
-              ptr, // Inputs are stored at location ptr.
+              0,    // No ether tansfer.
+              ptr,  // Inputs are stored at location ptr.
               0x64, // Sum of all inputs is 100 bytes long.
-              ptr,  //Store output over input.
-              0x20) //Outputs are 32 bytes long.
+              ptr,  // Store output over input.
+              0x20) // Outputs are 32 bytes long.
             if eq(success, 0) {
                 revert(0, 0)
             }
             result := mload(ptr) // Assign output to result var
             mstore(0x40,add(ptr,0x64)) // Set storage pointer to new space
         }  
-	}
-    /* fallback */
-    function () public {
-        revert();
     }
 }
