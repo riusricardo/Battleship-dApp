@@ -12,7 +12,6 @@ You can play against anyone in the other side of the world and even bet on the f
 ## Installation
 
 ### Requirements
-* Unix system
 * [Geth 1.8+](https://github.com/ethereum/go-ethereum/wiki/Building-Ethereum)
 * [NodeJS/LTS](https://nodejs.org/en/download/package-manager/)
 * [uPort App](https://www.uport.me/)
@@ -25,8 +24,8 @@ You can play against anyone in the other side of the world and even bet on the f
 ## Usage
 
 ```sh
-(Terminal 2)$ npm run truffle-migration
-(Terminal 3)$ npm run geth-dev:whisper
+(Terminal 2)$ npm run truffle_migration
+(Terminal 3)$ npm run geth_dev:whisper
 (Terminal 1)$ npm start
 ```
 Login with your uPort mobile App.
@@ -44,7 +43,7 @@ App runs on http://localhost:3000
 ## Tests
 
 ```
-$ npm run truffle-tests
+$ npm run truffle_tests
 ```
 
 Truffle tests are useful to understand the game complexity.

@@ -93,7 +93,7 @@ contract Battleship is StateMachine,Initializable {
     /// @dev Get the final revealed board.
     /// @param _player The address of the selected player.
     /// @return Board array.
-    function getplayerShips(address _player) external view returns(uint[]){
+    function getPlayerShips(address _player) external view returns(uint[]){
         uint[] storage board = playerShips[_player];
         return board;
     }
@@ -201,7 +201,7 @@ contract Battleship is StateMachine,Initializable {
         address signer = ECRecovery.recover(_shipsHash.toEthSignedMessageHash(),_sig);
 
         //Validate signer delegate from Ethr registry. Secp256k1VerificationKey2018 -> "veriKey"
-        bool result = isValidDelegate(msg.sender, Bytes.stringToBytes32("veriKey"), signer); 
+        bool result = isValidDelegate(msg.sender, "veriKey", signer, ethrReg); 
         require(result == true, ", not a valid ethr signer delegate.");
         emit ValidSigner(msg.sender, signer, result);
 
@@ -448,37 +448,27 @@ contract Battleship is StateMachine,Initializable {
     }
 
     /// @dev Verifies if the signer delegate is valid in the Ethr DID registry.
-    /// @dev Similar to registry.call(bytes4(keccak256("validDelegate(address,bytes32,address)")), abi.encode(_identity, _delegateType, _delegate))
     /// @param _identity The address owner.
     /// @param _delegateType Type of delegate. Signer -> Secp256k1VerificationKey2018 -> bytes32("veriKey").
     /// @param _delegate The address of the signer delegate.
-    function isValidDelegate(address _identity, bytes32 _delegateType, address _delegate) internal ifPlayer returns(bool result){
+    /// @param _registry The address of the Ethr DID registry.
+    function isValidDelegate(
+        address _identity, 
+        string _delegateType, 
+        address _delegate, 
+        address _registry
+    ) internal ifPlayer view returns(bool result){
         require(ethrReg != address(0), ", ethr registry not set.");
-        require(_identity != address(0) && _delegateType != bytes32(0) && _delegate != address(0),", invalid delegate input.");
-        bytes4 VALID_DELEG_FSIG = bytes4(keccak256("validDelegate(address,bytes32,address)"));
+        require(_identity != address(0) && bytes(_delegateType).length > 0 && _delegate != address(0),", invalid delegate input.");
+        bytes memory data = abi.encodeWithSignature("validDelegate(address,bytes32,address)", _identity, Bytes.stringToBytes32(_delegateType), _delegate);
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            // Move pointer to free memory spot.
             let ptr := mload(0x40)
-            // Put function signature at memory spot.
-            mstore(ptr,VALID_DELEG_FSIG)
-            // Append arguments after function signature.
-            mstore(add(ptr,0x04), _identity)
-            mstore(add(ptr,0x24), _delegateType)
-            mstore(add(ptr,0x44), _delegate)
-            let success := call(
-              4000, // Gas limit.
-              sload(ethrReg_slot), // Append _slot to access Ethr DID registry storage.
-              0,    // No ether tansfer.
-              ptr,  // Inputs are stored at location ptr.
-              0x64, // Sum of all inputs is 100 bytes long.
-              ptr,  // Store output over input.
-              0x20) // Outputs are 32 bytes long.
+            let success := staticcall(sub(gas, 3800), _registry, add(data, 0x20), mload(data), ptr, 0x20)
             if eq(success, 0) {
                 revert(0, 0)
             }
-            result := mload(ptr) // Assign output to result var
-            mstore(0x40,add(ptr,0x64)) // Set storage pointer to new space
-        }  
-    }
+            result := mload(ptr)
+        } 
+    }    
 }

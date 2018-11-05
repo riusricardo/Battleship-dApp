@@ -13,14 +13,14 @@ library Bytes {
     /// @param _string string data.
     /// @return string converted to bytes32.
     function stringToBytes32(string memory _string) internal pure returns (bytes32) {
-        bytes memory temp = bytes(_string);
         bytes32 result;
-        require(temp.length > 0, ", incorrect string lenght.");
+        require(bytes(_string).length > 0, ", incorrect string lenght.");
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             result := mload(add(_string, 32))
         }
         return result;
-    }
+    }  
 
     /// @dev Converts bytes32 to Address type.
     /// @param _bytes bytes32 hex data.
