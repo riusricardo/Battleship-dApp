@@ -1,10 +1,10 @@
 import { drizzleConnect } from 'drizzle-react'
 import React, { Component } from 'react'
-import {browserHistory } from 'react-router'
 import PropTypes from 'prop-types'
 import Button from '@material-ui/core/Button';
 import SendIcon from "@material-ui/icons/Send";
 import ethjsABI from 'ethjs-abi'
+import { history } from '../../../store'
 import {updatingPlayer1, updatingPlayer2} from '../../../actions/create/updatePlayers'
 import {updatingGameAddress} from '../../../actions/create/updateGameAddress'
 import {Topic} from '../../../whisper/whisper-channel/channel'
@@ -86,7 +86,7 @@ class ContractFormCreate extends Component {
     });
 
     // CALL external function to random board.
-    browserHistory.push('/boardgame')
+    history.push('/boardgame')
     
   }
 

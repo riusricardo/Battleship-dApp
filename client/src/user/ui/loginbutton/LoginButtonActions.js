@@ -1,5 +1,5 @@
 import { uport } from './../../../util/connectors.js'
-import { browserHistory } from 'react-router'
+import { history } from '../../../store'
 
 export const USER_LOGGED_IN = 'USER_LOGGED_IN'
 function userLoggedIn(user) {
@@ -33,7 +33,7 @@ export function loginUser() {
         return browserHistory.push(decodeURIComponent(currentLocation.query.redirect))
       }
     */
-      return browserHistory.push('/create')
+      return history.push('/create')
     })
   }
 }

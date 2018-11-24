@@ -1,6 +1,6 @@
 {
-  "name": "Battleship-dApp",
-  "version": "0.1.2",
+  "name": "battleship-dapp",
+  "version": "0.2.0",
   "main": "src/index.js",
   "author": "Ricardo Rius",
   "license": "Apache-2.0",
@@ -9,13 +9,11 @@
     "url": "https://github.com/riusricardo/Battleship-dApp"
   },
   "devDependencies": {
-    "babel-preset-react-app": "^3.1.2",
-    "eslint-config-react-app": "^2.1.0",
-    "ganache-cli": "^6.1.6",
-    "react-scripts": "1.1.5",
+    "ganache-cli": "^6.1.8",
     "run-script-os": "^1.0.3",
     "truffle": "^4.1.14",
-    "truffle-hdwallet-provider": "^0.0.6"
+    "truffle-hdwallet-provider": "^0.0.6",
+    "truffle-react-scripts": "0.1.26"
   },
   "dependencies": {
     "@material-ui/core": "^3.3.1",
@@ -23,10 +21,8 @@
     "@parity/qr-signer": "^0.3.1",
     "ajv": "^6.5.4",
     "async": "^2.6.1",
-    "buffer": "^5.2.1",
-    "chainlink": "github:smartcontractkit/chainlink",
     "classnames": "^2.2.6",
-    "did-jwt": "^0.0.8",
+    "did-jwt": "0.0.9",
     "did-resolver": "^0.0.4",
     "drizzle": "^1.2.4",
     "drizzle-react": "^1.2.0",
@@ -37,18 +33,21 @@
     "ethjs-provider-http": "^0.1.6",
     "ethjs-query": "^0.3.8",
     "ethr-did": "^1.0.0",
-    "ethr-did-resolver": "^0.1.1",
+    "ethr-did-resolver": "^0.1.3",
     "events": "^3.0.0",
     "fsm-event": "^2.1.0",
+    "history": "^4.7.2",
     "interval-promise": "^1.2.0",
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2",
-    "react-redux": "^5.0.2",
-    "react-router": "^3.2.1",
-    "react-router-redux": "^4.0.7",
-    "redux": "^3.6.0",
-    "redux-auth-wrapper": "^1.0.0",
-    "redux-saga": "^0.16.0",
+    "prop-types": "^15.5.4",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-redux": "^5.1.1",
+    "react-router": "^4.3.1",
+    "react-router-dom": "^4.3.1",
+    "react-router-redux": "^4.0.8",
+    "redux": "^4.0.1",
+    "redux-auth-wrapper": "^2.0.3",
+    "redux-saga": "^0.16.2",
     "redux-thunk": "^2.3.0",
     "uport-connect": "0.7.5",
     "web3": "^1.0.0-beta.36"
@@ -56,14 +55,14 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
+    "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "link_contracts": "run-script-os",
-    "link_contracts:linux:darwin": "cd src && ln -s ../build/contracts contracts",
-    "link_contracts:win32": "cd src && mklink \\D contracts ..\\build\\contracts",
+    "slink": "run-script-os",
+    "slink:linux:darwin": "cd client/src && ln -s ../../build/contracts contracts",
+    "slink:win32": "cd client\\src && mklink \\D contracts ..\\..\\build\\contracts",
     "truffle_tests": "node ./node_modules/truffle/build/cli.bundled.js test --network ganache",
     "truffle_migration": "(sleep 5s && node ./node_modules/truffle/build/cli.bundled.js migrate --network ganache_dev) & npm run ganache_dev",
-    "ganache_dev": "node ./node_modules/ganache-cli/build/cli.node.js -a=10 -b=3 -p=8545 -i=1335 -l=8000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
+    "ganache_dev": "node ./node_modules/ganache-cli/cli.js -a=10 -b=3 -p=8545 -i=1335 -l=8000000 -g=1000000000 -m='coffee slogan task clinic begin rocket rabbit despair tank kid hire quiz'",
     "geth_dev:whisper": "npm run geth_dev:delete && geth --networkid=1337 --datadir=.dev/datadir --shh --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --wsapi=eth,web3,net,shh,debug,personal --nodiscover --maxpeers=0 --dev",
     "geth_dev:delete": "rm -fR .dev/datadir/geth/",
     "geth_dev:remove": "yes | geth removedb --datadir=.dev/datadir",
@@ -75,43 +74,13 @@
     "geth_priv:chain": " geth --networkid=1337 --datadir=.dev/datadir --unlock f18f16eebae0912a17885d743754c943b548a630,04c4b39e60ab3655af44cb928ac0da196188dd65,2eb6b952af9ef44f376e799ca44a76a28d3e8957,d84d3cd384604375a115d697e838b5b4ed681c9d,1435b9664159cc908d67c46b2f92ecb414ec8190,5fc5cea687718fbdb529f19a2fffb621aa828405,8d36227d3549846490fdf61e51a07ce5c84cfd56,cf2069750e3ce70f971f7f0af9538af7fd773e47,eee054834b10c5c76e2e25c8b00b0499f2916df2,46bbce669bd8b37660695d4f863da4665079c596 --password config/dev_pass.txt --cache=1024 --cache.database=75 --port=30303 --rpc --rpcport=8545 --rpcaddr=localhost  --rpccorsdomain=\"*\" --nodiscover --maxpeers=0 --ws --wsport=8546 --wsaddr=localhost --wsorigins=\"*\" --mine --minerthreads=1 --etherbase=0xf18f16eebae0912a17885d743754c943b548a630  --shh --rpcapi=eth,web3,net,debug,shh,personal --wsapi=eth,web3,net,shh,debug,personal --gpopercentile=60 --gpoblocks=20 --targetgaslimit=800000000 --gasprice=1000000000 --ethash.dagdir=.dev/datadir/geth/ --ethash.cachedir=.dev/datadir/geth/ --ethash.dagsinmem=1 --ethash.dagsondisk=1",
     "geth_priv": "npm run geth_priv:remove &&  npm run run geth_priv:init && npm run geth_priv:chain"
   },
-  "jest": {
-    "collectCoverageFrom": [
-      "src/**/*.{js,jsx,mjs}"
-    ],
-    "testMatch": [
-      "<rootDir>/src/**/__tests__/**/*.{js,jsx,mjs}",
-      "<rootDir>/src/**/?(*.)(spec|test).{js,jsx,mjs}"
-    ],
-    "testEnvironment": "node",
-    "testURL": "http://localhost",
-    "transform": {
-      "^.+\\.(js|jsx|mjs)$": "<rootDir>/node_modules/babel-jest",
-      "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
-      "^(?!.*\\.(js|jsx|mjs|css|json)$)": "<rootDir>/config/jest/fileTransform.js"
-    },
-    "transformIgnorePatterns": [
-      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs)$"
-    ],
-    "moduleNameMapper": {
-      "^react-native$": "react-native-web"
-    },
-    "moduleFileExtensions": [
-      "web.js",
-      "js",
-      "json",
-      "web.jsx",
-      "jsx",
-      "node",
-      "mjs"
-    ]
-  },
-  "babel": {
-    "presets": [
-      "react-app"
-    ]
-  },
   "eslintConfig": {
     "extends": "react-app"
-  }
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }

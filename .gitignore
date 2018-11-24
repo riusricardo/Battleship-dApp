@@ -1,7 +1,7 @@
-# seed
-# key.json
+# production
+/build
 
-build/
+# Geth --dev datadir
 .dev/datadir/geth
 
 # Remove lock files (OS inconsistencies)
