@@ -28,6 +28,6 @@ export const VisibleOnlyAuth = connectedAuthWrapper({
 })
 
 export const HiddenOnlyAuth = connectedAuthWrapper({
-  authenticatedSelector: state => state.user !== null && state.user.data,
+  authenticatedSelector: state => state.user === null && !state.user.data,
   wrapperDisplayName: 'HiddenOnlyAuth'
 })

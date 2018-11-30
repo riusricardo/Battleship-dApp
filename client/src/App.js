@@ -39,7 +39,8 @@ class App extends Component {
       </span>
     )
 
-    const OnlyGuestLinks = HiddenOnlyAuth(() =>
+    //const OnlyGuestLinks = HiddenOnlyAuth(() =>
+    const OnlyGuestLinks = (() =>
       <span>
         <LoginButtonContainer />
       </span>
