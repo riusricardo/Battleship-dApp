@@ -1,6 +1,6 @@
 # Battleship-dApp 
-![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)
-[![CircleCI](https://circleci.com/gh/riusricardo/Battleship-dApp.svg?style=svg)](https://circleci.com/gh/riusricardo/Battleship-dApp)
+![](https://www.repostatus.org/badges/latest/inactive.svg)
+[](https://circleci.com/gh/riusricardo/Battleship-dApp)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/riusricardo/Battleship-dApp/pulls)
 
 
